@@ -9,7 +9,7 @@ plugins {
 
 group = 'com.b9.json'
 version = '0.0.1-SNAPSHOT'
-description = 'json-platform'
+description = 'json-backend'
 
 java {
     toolchain {
