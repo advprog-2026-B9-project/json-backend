@@ -1,7 +1,7 @@
 package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
 import com.b9.json.jsonplatform.auth.domain.User;
-import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
-    private UserRepository userRepository;
+    private AuthService authService;
 
     @GetMapping("/register")
     public String showRegisterForm(Model model) {
@@ -22,16 +22,49 @@ public class AuthController {
 
     @PostMapping("/register")
     public String registerUser(@ModelAttribute User user) {
-        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-            user.setUsername(user.getEmail().split("@")[0]);
-        }
-        userRepository.save(user);
+        authService.registerUser(user);
         return "redirect:/auth/register?success";
+    }
+
+    @GetMapping("/login")
+    public String showLoginForm() {
+        return "Login";
+    }
+
+    @PostMapping("/login")
+    public String loginUser(@RequestParam String email, @RequestParam String password, Model model) {
+        User loggedInUser = authService.loginUser(email, password);
+        if (loggedInUser != null) {
+            return "redirect:/auth/profile?email=" + loggedInUser.getEmail();
+        }
+
+        model.addAttribute("error", "Email atau password salah!");
+        return "Login";
+    }
+
+    @GetMapping("/profile")
+    public String showProfileForm(@RequestParam String email, Model model) {
+        User user = authService.findByEmail(email);
+        if (user != null) {
+            model.addAttribute("user", user);
+            return "Profile";
+        }
+        return "redirect:/auth/register";
+    }
+
+    @PostMapping("/profile")
+    public String updateProfile(@RequestParam String email, @ModelAttribute User updatedUser) {
+        User savedUser = authService.updateProfile(email, updatedUser);
+
+        if (savedUser != null) {
+            return "redirect:/auth/profile?email=" + savedUser.getEmail() + "&success";
+        }
+        return "redirect:/auth/register";
     }
 
     @GetMapping("/list")
     public String listUsers(Model model) {
-        model.addAttribute("users", userRepository.findAll());
+        model.addAttribute("users", authService.findAllUsers());
         return "UserList";
     }
 }
