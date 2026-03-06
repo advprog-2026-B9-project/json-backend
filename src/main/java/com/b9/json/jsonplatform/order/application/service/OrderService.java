@@ -8,8 +8,11 @@ import java.util.List;
 
 @Service
 public class OrderService {
-    @Autowired
-    private OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
+
+    public OrderService(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
 
     public Order createOrder(Order order) {
         if (order.getQuantity() == null || order.getQuantity() <= 0) {
