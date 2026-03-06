@@ -58,6 +58,5 @@ public class Product {
     @NotNull(message = "Tanggal pembelian atau kembali harus diisi")
     private LocalDate arrivalDate;
 
-    @NotBlank
     private String ownerUsername;
 }
