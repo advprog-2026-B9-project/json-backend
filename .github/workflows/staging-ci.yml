@@ -27,36 +27,37 @@ jobs:
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
 
       - name: Grant execute permission for gradlew
-        working-directory: ./backend
         run: chmod +x gradlew
 
       - name: Run Tests & Linters (Checkstyle & JaCoCo)
-        working-directory: ./backend
         run: ./gradlew check
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       - name: Upload Test Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: failure()
         with:
           name: test-reports
-          path: backend/build/reports/tests/test/
+          path: build/reports/tests/test/
 
       - name: Upload Code Coverage Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: jacoco-coverage-report
-          path: backend/build/reports/jacoco/test/html/
+          path: build/reports/jacoco/test/html/
 
       - name: Cache SonarQube packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Analyze with SonarCloud
-        working-directory: ./backend
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
