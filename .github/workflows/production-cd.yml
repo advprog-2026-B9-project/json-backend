@@ -1,24 +1,44 @@
-name: Production CD
+name: Production Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  deploy-production:
-    name: Dummy Deploy to Production
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-      - name: Simulate Production Deployment
-        run: |
-          echo "Memulai proses deployment ke server PRODUCTION..."
-          echo "PERINGATAN: Menyentuh database produksi!"
-          sleep 2
-          echo "Menyiapkan rilis versi terbaru..."
-          sleep 2
-          echo "Mengalihkan traffic ke server baru tanpa downtime..."
-          sleep 3
-          echo "Dummy deployment ke Production berhasil!"
-          echo "URL Production: https://www.b09.json-platform.com"
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
+
+      - name: Releasing New Version
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker rmi $(docker images -a -q)
+            docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
+            source .env
+            docker run -d \
+            --name=web_server \
+            -p 8080:8080 \
+            -e SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
+            -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
+            -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
