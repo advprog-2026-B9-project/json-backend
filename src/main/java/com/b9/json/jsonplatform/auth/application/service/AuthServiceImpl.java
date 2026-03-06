@@ -14,6 +14,12 @@ public class AuthServiceImpl implements AuthService {
     private UserRepository userRepository;
 
     private String resolveUsername(String requestedUsername, String email) {
+        if (email == null) {
+            return (requestedUsername != null && !requestedUsername.trim().isEmpty())
+                    ? requestedUsername
+                    : "user_tanpa_email";
+        }
+
         if (requestedUsername == null || requestedUsername.trim().isEmpty()) {
             return email.split("@")[0];
         }
