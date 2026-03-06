@@ -3,68 +3,45 @@ package com.b9.json.jsonplatform.auth.infrastructure.controller;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+
+@RestController
 @RequestMapping("/auth")
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
     private AuthService authService;
 
-    @GetMapping("/register")
-    public String showRegisterForm(Model model) {
-        model.addAttribute("user", new User());
-        return "Register";
-    }
-
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute User user) {
-        authService.registerUser(user);
-        return "redirect:/auth/register?success";
-    }
-
-    @GetMapping("/login")
-    public String showLoginForm() {
-        return "Login";
+    public ResponseEntity<User> registerUser(@RequestBody User user) {
+        User savedUser = authService.registerUser(user);
+        return ResponseEntity.ok(savedUser);
     }
 
     @PostMapping("/login")
-    public String loginUser(@RequestParam String email, @RequestParam String password, Model model) {
-        User loggedInUser = authService.loginUser(email, password);
+    public ResponseEntity<?> loginUser(@RequestBody User loginData) {
+        User loggedInUser = authService.loginUser(loginData.getEmail(), loginData.getPassword());
         if (loggedInUser != null) {
-            return "redirect:/auth/profile?email=" + loggedInUser.getEmail();
+            return ResponseEntity.ok(loggedInUser);
         }
-
-        model.addAttribute("error", "Email atau password salah!");
-        return "Login";
+        return ResponseEntity.badRequest().body("Email atau password salah!");
     }
 
-    @GetMapping("/profile")
-    public String showProfileForm(@RequestParam String email, Model model) {
-        User user = authService.findByEmail(email);
-        if (user != null) {
-            model.addAttribute("user", user);
-            return "Profile";
-        }
-        return "redirect:/auth/register";
-    }
-
-    @PostMapping("/profile")
-    public String updateProfile(@RequestParam String email, @ModelAttribute User updatedUser) {
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestParam String email, @RequestBody User updatedUser) {
         User savedUser = authService.updateProfile(email, updatedUser);
-
         if (savedUser != null) {
-            return "redirect:/auth/profile?email=" + savedUser.getEmail() + "&success";
+            return ResponseEntity.ok(savedUser);
         }
-        return "redirect:/auth/register";
+        return ResponseEntity.badRequest().body("User tidak ditemukan!");
     }
 
     @GetMapping("/list")
-    public String listUsers(Model model) {
-        model.addAttribute("users", authService.findAllUsers());
-        return "UserList";
+    public ResponseEntity<List<User>> listUsers() {
+        return ResponseEntity.ok(authService.findAllUsers());
     }
 }
