@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "orders")
@@ -19,6 +20,7 @@ public class Order {
 
     private UUID productId;
     private Integer quantity;
+    private BigDecimal totalPrice;
     private String shippingAddress;
     private String status;
     private LocalDateTime createdAt;
