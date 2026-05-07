@@ -24,11 +24,18 @@ public class User {
     private String username;
 
     private String fullName;
-    private String role = "TITIPERS";
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.TITIPERS;
+
     private String phoneNumber;
     private String address;
 
-    private String kycStatus = "UNVERIFIED";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private KycStatus kycStatus = KycStatus.UNVERIFIED;
+
     private String nikKtp;
     private String ktpImageUrl;
 }

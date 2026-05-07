@@ -1,6 +1,8 @@
 package com.b9.json.jsonplatform.auth.application.service;
 
+import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -76,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
             user.setFullName(fullName);
             user.setNikKtp(nikKtp);
             user.setKtpImageUrl(ktpImageUrl);
-            user.setKycStatus("PENDING_VERIFICATION");
+            user.setKycStatus(KycStatus.PENDING_VERIFICATION);
             return userRepository.save(user);
         }
         return null;
@@ -85,20 +87,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public List<User> findPendingKyc() {
         return userRepository.findAll().stream()
-                .filter(u -> "PENDING_VERIFICATION".equals(u.getKycStatus()))
+                .filter(u -> KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
                 .toList();
     }
 
     @Override
     public User reviewKyc(String email, boolean approved) {
         User user = userRepository.findByEmail(email);
-        if (user != null && "PENDING_VERIFICATION".equals(user.getKycStatus())) {
+        if (user != null && KycStatus.PENDING_VERIFICATION.equals(user.getKycStatus())) {
             if (approved) {
-                user.setKycStatus("VERIFIED");
-                user.setRole("JASTIPER");
+                user.setKycStatus(KycStatus.VERIFIED);
+                user.setRole(UserRole.JASTIPER);
             }
             else {
-                user.setKycStatus("UNVERIFIED");
+                user.setKycStatus(KycStatus.UNVERIFIED);
             }
             return userRepository.save(user);
         }
