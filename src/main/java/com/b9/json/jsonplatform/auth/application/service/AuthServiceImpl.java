@@ -4,6 +4,7 @@ import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
+import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,7 +21,7 @@ public class AuthServiceImpl implements AuthService {
     private UserRepository userRepository;
 
     @Autowired
-    private WalletRepository walletRepository;
+    private WalletService walletService;
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -47,10 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Every newly registered user should have exactly one wallet.
-        if (walletRepository.findByUserId(savedUser.getId()).isEmpty()) {
-            walletRepository.save(new Wallet(savedUser.getId()));
-        }
+        walletService.createWallet(savedUser.getId());
 
         return savedUser;
     }
@@ -119,8 +117,13 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email);
         if (user == null) return 0;
 
-        Wallet wallet = walletRepository.findByUserId(user.getId()).orElse(null);
-        if (wallet == null) return 0;
+        Wallet wallet;
+        try {
+            wallet = walletService.getWalletByUserId(user.getId());
+        }
+        catch (Exception e) {
+            return 0;
+        }
 
         // TODO: hubungkan ke Order jika fitur Order sudah selesai,
         //       idealnya hitung dari Order dengan status COMPLETED milik Jastiper
