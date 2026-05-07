@@ -45,6 +45,15 @@ public class AuthController {
         return ResponseEntity.ok(authService.findAllUsers());
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<?> getUserByEmail(@RequestParam String email) {
+        User user = authService.findByEmail(email);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        }
+        return ResponseEntity.badRequest().body("User tidak ditemukan!");
+    }
+
     public static class KycRequest {
         private String email;
         private String fullName;
