@@ -10,7 +10,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -106,5 +105,16 @@ class JpaProductRepositoryTest {
         assertDoesNotThrow(() -> jpaProductRepository.deleteById(productId));
 
         verify(springDataRepository, times(1)).deleteById(productId);
+    }
+
+    @Test
+    void testSearchProducts() {
+        List<Product> productList = List.of(sampleProduct);
+        when(springDataRepository.searchProducts("produk", "user1")).thenReturn(productList);
+
+        List<Product> result = jpaProductRepository.searchProducts("produk", "user1");
+
+        assertEquals(1, result.size());
+        verify(springDataRepository, times(1)).searchProducts("produk", "user1");
     }
 }

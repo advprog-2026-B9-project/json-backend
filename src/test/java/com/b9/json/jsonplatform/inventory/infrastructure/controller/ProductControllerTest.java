@@ -87,16 +87,19 @@ class ProductControllerTest {
 
     @Test
     void getAllProducts() throws Exception {
-        List<Product> products = Collections.singletonList(sampleProduct);
-        when(productService.getAllProducts()).thenReturn(products);
+        ProductDetailResponse response = new ProductDetailResponse(sampleProduct, "User 1", "08123456789");
+        List<ProductDetailResponse> responses = Collections.singletonList(response);
+
+        when(productService.getAllProductsWithDetails(null, null)).thenReturn(responses);
 
         mockMvc.perform(get("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size()").value(1))
-                .andExpect(jsonPath("$[0].name").value(sampleProduct.getName()));
+                .andExpect(jsonPath("$[0].name").value(sampleProduct.getName()))
+                .andExpect(jsonPath("$[0].jastiperFullName").value("User 1"));
 
-        verify(productService, times(1)).getAllProducts();
+        verify(productService, times(1)).getAllProductsWithDetails(null, null);
     }
 
     @Test

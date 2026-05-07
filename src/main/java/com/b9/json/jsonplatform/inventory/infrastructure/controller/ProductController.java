@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,12 +37,6 @@ public class ProductController {
 
         Product createdProduct = productService.createProduct(product, ownerUsername);
         return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     @GetMapping("/me")
@@ -69,5 +64,13 @@ public class ProductController {
 
         productService.deleteProduct(id, ownerUsername);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProductDetailResponse>> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String jastiper) {
+
+        return ResponseEntity.ok(productService.getAllProductsWithDetails(name, jastiper));
     }
 }

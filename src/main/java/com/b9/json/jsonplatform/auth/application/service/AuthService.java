@@ -8,6 +8,7 @@ public interface AuthService {
     User loginUser(String email, String password);
     User updateProfile(String email, User updatedUser);
     User findByEmail(String email);
+    User findByUsername(String username);
     List<User> findAllUsers();
     User demoteJastiper(String email);
     User banUser(String email);

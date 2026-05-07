@@ -1,8 +1,11 @@
 package com.b9.json.jsonplatform.inventory.application.service;
 
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 
+import com.b9.json.jsonplatform.inventory.infrastructure.controller.ProductDetailResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +37,9 @@ class ProductServiceImplTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private AuthService authService;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -144,5 +150,23 @@ class ProductServiceImplTest {
         List<Product> productList = productService.getMyProducts(owner);
         assertEquals(sampleProduct, productList.getFirst());
         verify(productRepository, times(1)).findByOwner(owner);
+    }
+
+    @Test
+    void testGetAllProductsWithDetails_Success() {
+        User mockUser = new User();
+        mockUser.setUsername(owner);
+        mockUser.setFullName("User 1");
+        mockUser.setPhoneNumber("08123456789");
+
+        when(productRepository.searchProducts("produknya", owner)).thenReturn(List.of(sampleProduct));
+        when(authService.findByUsername(owner)).thenReturn(mockUser);
+
+        List<ProductDetailResponse> result = productService.getAllProductsWithDetails("produknya", owner);
+
+        assertEquals(1, result.size());
+        assertEquals("User 1", result.getFirst().getJastiperFullName());
+        verify(productRepository, times(1)).searchProducts("produknya", owner);
+        verify(authService, times(1)).findByUsername(owner);
     }
 }

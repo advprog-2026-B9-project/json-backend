@@ -1,8 +1,11 @@
 package com.b9.json.jsonplatform.inventory.application.service;
 
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 
+import com.b9.json.jsonplatform.inventory.infrastructure.controller.ProductDetailResponse;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -15,6 +18,7 @@ import java.util.UUID;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final AuthService authService;
 
     @Override
     public Product createProduct(Product product, String ownerUsername) {
@@ -59,5 +63,19 @@ public class ProductServiceImpl implements ProductService {
         }
 
         productRepository.deleteById(id);
+    }
+
+    @Override
+    public List<ProductDetailResponse> getAllProductsWithDetails(String name, String jastiper) {
+        List<Product> products = productRepository.searchProducts(name, jastiper);
+
+        return products.stream().map(product -> {
+            User user = authService.findByUsername(product.getOwnerUsername());
+
+            String fullName = (user != null) ? user.getFullName() : "Anonim";
+            String phone = (user != null) ? user.getPhoneNumber() : "-";
+
+            return new ProductDetailResponse(product, fullName, phone);
+        }).toList();
     }
 }
