@@ -12,4 +12,5 @@ public interface AuthService {
     List<User> findAllUsers();
     User demoteJastiper(String email);
     User banUser(String email);
+    long countSuccessfulTransactions(String email);
 }
