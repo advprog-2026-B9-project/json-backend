@@ -4,8 +4,7 @@ import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
-import com.b9.json.jsonplatform.wallet.domain.Wallet;
-import com.b9.json.jsonplatform.wallet.domain.WalletRepository;
+import com.b9.json.jsonplatform.wallet.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +21,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private WalletRepository walletRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private String resolveUsername(String requestedUsername, String email) {
@@ -110,5 +112,22 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public long countSuccessfulTransactions(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) return 0;
+
+        Wallet wallet = walletRepository.findByUserId(user.getId()).orElse(null);
+        if (wallet == null) return 0;
+
+        // TODO: hubungkan ke Order jika fitur Order sudah selesai,
+        //       idealnya hitung dari Order dengan status COMPLETED milik Jastiper
+        return transactionRepository.findByWalletId(wallet.getId())
+                .stream()
+                .filter(t -> TransactionStatus.SUCCESS.equals(t.getStatus())
+                        && TransactionType.PAYMENT.equals(t.getType()))
+                .count();
     }
 }

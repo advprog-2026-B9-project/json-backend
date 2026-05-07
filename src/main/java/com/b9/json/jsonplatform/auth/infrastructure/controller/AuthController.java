@@ -61,9 +61,10 @@ public class AuthController {
             response.setKycStatus(user.getKycStatus().name());
             response.setBanned(user.isBanned());
 
-            // Placeholder transaksi sukses (Milestone 75%)
             if (UserRole.JASTIPER.equals(user.getRole())) {
-                response.setTotalSuccessfulTransactions(0);
+                response.setTotalSuccessfulTransactions(
+                        authService.countSuccessfulTransactions(email)
+                );
             }
             else {
                 response.setTotalSuccessfulTransactions(0);
