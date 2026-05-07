@@ -106,4 +106,25 @@ public class AuthServiceImpl implements AuthService {
         }
         return null;
     }
+
+    @Override
+    public User demoteJastiper(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null && UserRole.JASTIPER.equals(user.getRole())) {
+            user.setRole(UserRole.TITIPERS);
+            user.setKycStatus(KycStatus.UNVERIFIED);
+            return userRepository.save(user);
+        }
+        return null;
+    }
+
+    @Override
+    public User banUser(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            user.setBanned(true);
+            return userRepository.save(user);
+        }
+        return null;
+    }
 }

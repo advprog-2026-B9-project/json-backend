@@ -38,4 +38,7 @@ public class User {
 
     private String nikKtp;
     private String ktpImageUrl;
+
+    @Column(nullable = false)
+    private boolean isBanned = false;
 }

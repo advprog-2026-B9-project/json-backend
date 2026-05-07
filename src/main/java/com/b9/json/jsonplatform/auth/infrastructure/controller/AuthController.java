@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,7 +50,23 @@ public class AuthController {
     public ResponseEntity<?> getUserByEmail(@RequestParam String email) {
         User user = authService.findByEmail(email);
         if (user != null) {
-            return ResponseEntity.ok(user);
+            PublicProfileResponse response = new PublicProfileResponse();
+            response.setUsername(user.getUsername());
+            response.setFullName(user.getFullName());
+
+            response.setRole(user.getRole().name());
+            response.setKycStatus(user.getKycStatus().name());
+
+            response.setBanned(user.isBanned());
+
+            // TODO: Hardcoded 0 sementara nunggu Order
+            if (UserRole.JASTIPER.equals(user.getRole())) {
+                response.setTotalSuccessfulTransactions(0);
+            }
+            else {
+                response.setTotalSuccessfulTransactions(0);
+            }
+            return ResponseEntity.ok(response);
         }
         return ResponseEntity.badRequest().body("User tidak ditemukan!");
     }
