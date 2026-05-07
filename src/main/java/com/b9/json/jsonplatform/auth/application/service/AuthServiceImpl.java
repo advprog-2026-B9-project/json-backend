@@ -1,6 +1,8 @@
 package com.b9.json.jsonplatform.auth.application.service;
 
+import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
 import com.b9.json.jsonplatform.wallet.domain.WalletRepository;
@@ -85,36 +87,21 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl) {
+    public User demoteJastiper(String email) {
         User user = userRepository.findByEmail(email);
-        if (user != null) {
-            user.setFullName(fullName);
-            user.setNikKtp(nikKtp);
-            user.setKtpImageUrl(ktpImageUrl);
-            user.setKycStatus("PENDING_VERIFICATION");
+        if (user != null && UserRole.JASTIPER.equals(user.getRole())) {
+            user.setRole(UserRole.TITIPERS);
+            user.setKycStatus(KycStatus.UNVERIFIED);
             return userRepository.save(user);
         }
         return null;
     }
 
     @Override
-    public List<User> findPendingKyc() {
-        return userRepository.findAll().stream()
-                .filter(u -> "PENDING_VERIFICATION".equals(u.getKycStatus()))
-                .toList();
-    }
-
-    @Override
-    public User reviewKyc(String email, boolean approved) {
+    public User banUser(String email) {
         User user = userRepository.findByEmail(email);
-        if (user != null && "PENDING_VERIFICATION".equals(user.getKycStatus())) {
-            if (approved) {
-                user.setKycStatus("VERIFIED");
-                user.setRole("JASTIPER");
-            }
-            else {
-                user.setKycStatus("UNVERIFIED");
-            }
+        if (user != null) {
+            user.setBanned(true);
             return userRepository.save(user);
         }
         return null;

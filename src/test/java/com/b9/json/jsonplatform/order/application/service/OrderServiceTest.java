@@ -62,11 +62,12 @@ class OrderServiceTest {
         UUID buyerWalletId = UUID.randomUUID();
         UUID sellerWalletId = UUID.randomUUID();
         UUID transactionId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
 
         Order order = new Order();
         order.setTitiperId(titiperId);
         order.setJastiperId(jastiperId);
-        order.setProductId(1L);
+        order.setProductId(productId);
         order.setQuantity(5);
         order.setTotalPrice(new BigDecimal("50000"));
 
@@ -80,7 +81,7 @@ class OrderServiceTest {
         Transaction dummyTx = mock(Transaction.class);
         when(dummyTx.getId()).thenReturn(transactionId);
 
-        when(inventoryService.isStockAvailable(1L, 5)).thenReturn(true);
+        when(inventoryService.isStockAvailable(productId, 5)).thenReturn(true);
         when(walletService.getWalletByUserId(titiperId)).thenReturn(buyerWallet);
         when(walletService.getWalletByUserId(jastiperId)).thenReturn(sellerWallet);
         when(transactionService.createPayment(any(), any(), any())).thenReturn(dummyTx);
@@ -91,7 +92,7 @@ class OrderServiceTest {
         assertNotNull(result);
         assertEquals("PAID", result.getStatus());
         verify(transactionService, times(1)).markSuccess(transactionId);
-        verify(inventoryService, times(1)).reserveStock(1L, 5);
+        verify(inventoryService, times(1)).reserveStock(productId, 5);
         verify(orderRepository, times(1)).save(order);
     }
 
@@ -127,14 +128,15 @@ class OrderServiceTest {
     @Test
     void testGetTitiperHistory() {
         Order o1 = new Order();
-        o1.setTitiperId(1L);
+        UUID titiperId = UUID.randomUUID();
+        o1.setTitiperId(titiperId);
         List<Order> history = Arrays.asList(o1);
 
-        when(orderRepository.findByTitiperId(1L)).thenReturn(history);
+        when(orderRepository.findByTitiperId(titiperId)).thenReturn(history);
 
-        List<Order> result = orderService.getTitiperHistory(1L);
+        List<Order> result = orderService.getTitiperHistory(titiperId);
 
         assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).getTitiperId());
+        assertEquals(titiperId, result.get(0).getTitiperId());
     }
 }

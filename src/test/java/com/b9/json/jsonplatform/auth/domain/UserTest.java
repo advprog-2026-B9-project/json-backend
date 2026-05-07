@@ -11,25 +11,25 @@ class UserTest {
     @Test
     void testUserGettersAndSetters() {
         User user = new User();
-        UUID id = UUID.randomUUID();
-        user.setId(id);
+        UUID mockId = UUID.randomUUID();
+        user.setId(mockId);
         user.setEmail("mahasiswa@ui.ac.id");
         user.setPassword("rahasia123");
         user.setUsername("mahasiswa_ui");
 
-        assertEquals(id, user.getId());
+        assertEquals(mockId, user.getId());
         assertEquals("mahasiswa@ui.ac.id", user.getEmail());
         assertEquals("rahasia123", user.getPassword());
         assertEquals("mahasiswa_ui", user.getUsername());
 
         // Cek default value
-        assertEquals("TITIPERS", user.getRole());
+        assertEquals(UserRole.TITIPERS, user.getRole());
     }
 
     @Test
     void testUserCustomRole() {
         User user = new User();
-        user.setRole("ADMIN");
-        assertEquals("ADMIN", user.getRole());
+        user.setRole(UserRole.ADMIN);
+        assertEquals(UserRole.ADMIN, user.getRole());
     }
 }
