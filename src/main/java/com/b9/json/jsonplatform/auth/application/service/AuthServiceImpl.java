@@ -72,42 +72,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
-            user.setFullName(fullName);
-            user.setNikKtp(nikKtp);
-            user.setKtpImageUrl(ktpImageUrl);
-            user.setKycStatus(KycStatus.PENDING_VERIFICATION);
-            return userRepository.save(user);
-        }
-        return null;
-    }
-
-    @Override
-    public List<User> findPendingKyc() {
-        return userRepository.findAll().stream()
-                .filter(u -> KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
-                .toList();
-    }
-
-    @Override
-    public User reviewKyc(String email, boolean approved) {
-        User user = userRepository.findByEmail(email);
-        if (user != null && KycStatus.PENDING_VERIFICATION.equals(user.getKycStatus())) {
-            if (approved) {
-                user.setKycStatus(KycStatus.VERIFIED);
-                user.setRole(UserRole.JASTIPER);
-            }
-            else {
-                user.setKycStatus(KycStatus.UNVERIFIED);
-            }
-            return userRepository.save(user);
-        }
-        return null;
-    }
-
-    @Override
     public User demoteJastiper(String email) {
         User user = userRepository.findByEmail(email);
         if (user != null && UserRole.JASTIPER.equals(user.getRole())) {

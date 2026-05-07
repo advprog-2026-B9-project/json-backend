@@ -1,7 +1,8 @@
 package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
-import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.application.service.KycService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private KycService kycService;
 
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody User user) {
@@ -53,17 +57,14 @@ public class AuthController {
             PublicProfileResponse response = new PublicProfileResponse();
             response.setUsername(user.getUsername());
             response.setFullName(user.getFullName());
-
             response.setRole(user.getRole().name());
             response.setKycStatus(user.getKycStatus().name());
-
             response.setBanned(user.isBanned());
 
-            // TODO: Hardcoded 0 sementara nunggu Order
+            // Placeholder transaksi sukses (Milestone 75%)
             if (UserRole.JASTIPER.equals(user.getRole())) {
                 response.setTotalSuccessfulTransactions(0);
-            }
-            else {
+            } else {
                 response.setTotalSuccessfulTransactions(0);
             }
             return ResponseEntity.ok(response);
@@ -71,44 +72,6 @@ public class AuthController {
         return ResponseEntity.badRequest().body("User tidak ditemukan!");
     }
 
-    public static class KycRequest {
-        private String email;
-        private String fullName;
-        private String nikKtp;
-        private String ktpImageUrl;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getFullName() {
-            return fullName;
-        }
-
-        public void setFullName(String fullName) {
-            this.fullName = fullName;
-        }
-
-        public String getNikKtp() {
-            return nikKtp;
-        }
-
-        public void setNikKtp(String nikKtp) {
-            this.nikKtp = nikKtp;
-        }
-
-        public String getKtpImageUrl() {
-            return ktpImageUrl;
-        }
-
-        public void setKtpImageUrl(String ktpImageUrl) {
-            this.ktpImageUrl = ktpImageUrl;
-        }
-    }
 
     @PostMapping("/kyc/submit")
     public ResponseEntity<?> submitKyc(@RequestBody KycRequest request) {
@@ -116,7 +79,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body("NIK KTP tidak boleh kosong");
         }
 
-        User updatedUser = authService.submitKyc(
+        User updatedUser = kycService.submitKyc(
                 request.getEmail(),
                 request.getFullName(),
                 request.getNikKtp(),
@@ -129,35 +92,14 @@ public class AuthController {
         return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
     }
 
-    public static class KycReviewRequest {
-        private String email;
-        private boolean approved;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public boolean isApproved() {
-            return approved;
-        }
-
-        public void setApproved(boolean approved) {
-            this.approved = approved;
-        }
-    }
-
     @GetMapping("/admin/kyc/pending")
     public ResponseEntity<List<User>> getPendingKyc() {
-        return ResponseEntity.ok(authService.findPendingKyc());
+        return ResponseEntity.ok(kycService.findPendingKyc());
     }
 
     @PostMapping("/admin/kyc/review")
     public ResponseEntity<?> reviewKyc(@RequestBody KycReviewRequest request) {
-        User result = authService.reviewKyc(request.getEmail(), request.isApproved());
+        User result = kycService.reviewKyc(request.getEmail(), request.isApproved());
 
         if (result != null) {
             String message = request.isApproved() ?
@@ -165,6 +107,24 @@ public class AuthController {
                     "KYC Ditolak.";
             return ResponseEntity.ok(message);
         }
-        return ResponseEntity.badRequest().body("Gagal melakukan review. Pastikan email benar dan statusnya PENDING_VERIFICATION.");
+        return ResponseEntity.badRequest().body("Gagal melakukan review. Pastikan statusnya PENDING_VERIFICATION.");
+    }
+
+    @PostMapping("/admin/demote")
+    public ResponseEntity<?> demoteUser(@RequestParam String email) {
+        User result = authService.demoteJastiper(email);
+        if (result != null) {
+            return ResponseEntity.ok("User berhasil di-demote menjadi TITIPERS.");
+        }
+        return ResponseEntity.badRequest().body("Gagal demote. Pastikan user adalah JASTIPER.");
+    }
+
+    @PostMapping("/admin/ban")
+    public ResponseEntity<?> banUser(@RequestParam String email) {
+        User result = authService.banUser(email);
+        if (result != null) {
+            return ResponseEntity.ok("User berhasil di-banned.");
+        }
+        return ResponseEntity.badRequest().body("Gagal melakukan banned.");
     }
 }
