@@ -5,6 +5,7 @@ import com.b9.json.jsonplatform.auth.application.service.KycService;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -63,7 +64,8 @@ public class AuthController {
             // Placeholder transaksi sukses (Milestone 75%)
             if (UserRole.JASTIPER.equals(user.getRole())) {
                 response.setTotalSuccessfulTransactions(0);
-            } else {
+            }
+            else {
                 response.setTotalSuccessfulTransactions(0);
             }
             return ResponseEntity.ok(response);
@@ -92,14 +94,25 @@ public class AuthController {
     }
 
     @GetMapping("/admin/kyc/pending")
-    public ResponseEntity<List<User>> getPendingKyc() {
+    public ResponseEntity<?> getPendingKyc(@RequestParam String requesterEmail) {
+        User requester = authService.findByEmail(requesterEmail);
+        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+        }
         return ResponseEntity.ok(kycService.findPendingKyc());
     }
 
     @PostMapping("/admin/kyc/review")
-    public ResponseEntity<?> reviewKyc(@RequestBody KycReviewRequest request) {
+    public ResponseEntity<?> reviewKyc(
+            @RequestParam String requesterEmail,
+            @RequestBody KycReviewRequest request) {
+        User requester = authService.findByEmail(requesterEmail);
+        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+        }
         User result = kycService.reviewKyc(request.getEmail(), request.isApproved());
-
         if (result != null) {
             String message = request.isApproved() ?
                     "KYC Disetujui. Akun berhasil di-upgrade menjadi JASTIPER." :
@@ -110,7 +123,14 @@ public class AuthController {
     }
 
     @PostMapping("/admin/demote")
-    public ResponseEntity<?> demoteUser(@RequestParam String email) {
+    public ResponseEntity<?> demoteUser(
+            @RequestParam String requesterEmail,
+            @RequestParam String email) {
+        User requester = authService.findByEmail(requesterEmail);
+        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+        }
         User result = authService.demoteJastiper(email);
         if (result != null) {
             return ResponseEntity.ok("User berhasil di-demote menjadi TITIPERS.");
@@ -119,7 +139,14 @@ public class AuthController {
     }
 
     @PostMapping("/admin/ban")
-    public ResponseEntity<?> banUser(@RequestParam String email) {
+    public ResponseEntity<?> banUser(
+            @RequestParam String requesterEmail,
+            @RequestParam String email) {
+        User requester = authService.findByEmail(requesterEmail);
+        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+        }
         User result = authService.banUser(email);
         if (result != null) {
             return ResponseEntity.ok("User berhasil di-banned.");
