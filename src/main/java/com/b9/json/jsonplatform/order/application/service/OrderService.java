@@ -8,8 +8,12 @@ import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.util.UUID;
@@ -128,5 +132,9 @@ public class OrderService {
 
         order.setStatus("CANCELLED");
         return orderRepository.save(order);
+    }
+
+    public List<Order> getOrdersByJastiper(UUID jastiperId) {
+        return orderRepository.findByJastiperId(jastiperId);
     }
 }

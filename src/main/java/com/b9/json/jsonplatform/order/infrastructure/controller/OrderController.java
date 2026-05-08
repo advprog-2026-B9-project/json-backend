@@ -2,6 +2,8 @@ package com.b9.json.jsonplatform.order.infrastructure.controller;
 
 import com.b9.json.jsonplatform.order.domain.Order;
 import com.b9.json.jsonplatform.order.application.service.OrderService;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
@@ -25,5 +27,17 @@ public class OrderController {
     @GetMapping("/history/{titiperId}")
     public List<Order> history(@PathVariable UUID titiperId) {
         return orderService.getTitiperHistory(titiperId);
+    }
+
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<Order> cancelOrder(@PathVariable UUID orderId) {
+        Order canceledOrder = orderService.cancelAndRefundOrder(orderId);
+        return ResponseEntity.ok(canceledOrder);
+    }
+
+    @GetMapping("/jastiper/{jastiperId}")
+    public ResponseEntity<List<Order>> getJastiperOrders(@PathVariable UUID jastiperId) {
+        List<Order> orders = orderService.getOrdersByJastiper(jastiperId);
+        return ResponseEntity.ok(orders);
     }
 }

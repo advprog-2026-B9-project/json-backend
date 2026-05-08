@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByTitiperId(UUID titiperId);
     long countByJastiperIdAndStatus(UUID jastiperId, String status);
+    List<Order> findByJastiperId(UUID jastiperId);
 }
