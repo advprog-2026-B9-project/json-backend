@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
 
     private UUID titiperId;
     private UUID jastiperId;
@@ -22,7 +22,13 @@ public class Order {
     private Integer quantity;
     private BigDecimal totalPrice;
     private String shippingAddress;
-    private String status;
+    
+    @Column(nullable = false)
+    private String status; 
+
+    @Column(name = "tracking_number")
+    private String trackingNumber;
+
     private LocalDateTime createdAt;
 
     @PrePersist
