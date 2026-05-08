@@ -78,4 +78,22 @@ public class ProductServiceImpl implements ProductService {
             return new ProductDetailResponse(product, fullName, phone);
         }).toList();
     }
+
+    @Override
+    public Product getProductById(UUID id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
+    }
+
+    @Override
+    public void deductProductStock(UUID id, Integer quantity) throws RuntimeException {
+        Product product = getProductById(id);
+
+        if (product.getStock() < quantity) {
+            throw new IllegalStateException("Stok barang tidak mencukupi. Sisa stok: " + product.getStock());
+        }
+
+        product.setStock(product.getStock() - quantity);
+        productRepository.save(product);
+    }
 }
