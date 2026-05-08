@@ -108,4 +108,18 @@ public class ProductServiceImpl implements ProductService {
         product.setStock(product.getStock() - quantity);
         productRepository.save(product);
     }
+
+    @Override
+    @Transactional
+    public void increaseProductStock(UUID id, Integer quantity) throws RuntimeException {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Jumlah penambahan stok harus lebih dari 0");
+        }
+
+        Product product = productRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
+
+        product.setStock(product.getStock() + quantity);
+        productRepository.save(product);
+    }
 }

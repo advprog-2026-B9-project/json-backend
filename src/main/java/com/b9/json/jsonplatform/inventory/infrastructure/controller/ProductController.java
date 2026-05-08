@@ -88,4 +88,13 @@ public class ProductController {
         productService.deductProductStock(id, quantity);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PutMapping("/{id}/increase-stock")
+    public ResponseEntity<Void> increaseProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.increaseProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

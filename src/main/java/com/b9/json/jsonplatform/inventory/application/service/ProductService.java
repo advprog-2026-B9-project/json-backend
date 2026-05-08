@@ -15,4 +15,5 @@ public interface ProductService {
     List<ProductDetailResponse> getAllProductsWithDetails(String name, String jastiper);
     Product getProductById(UUID id);
     void deductProductStock(UUID id, Integer quantity);
+    void increaseProductStock(UUID id, Integer quantity);
 }
