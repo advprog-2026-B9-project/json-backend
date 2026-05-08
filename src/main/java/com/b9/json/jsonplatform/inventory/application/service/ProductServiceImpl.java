@@ -96,6 +96,18 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+    @Override
+    @Transactional
+    public void increaseProductStock(UUID id, Integer quantity) throws RuntimeException {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Jumlah penambahan stok harus lebih dari 0");
+        }
+
+        Product product = findProductByIdForUpdate(id);
+        product.setStock(product.getStock() + quantity);
+        productRepository.save(product);
+    }
+
     private void validateOwnership(String productOwner, String requesterUsername) {
         if (!productOwner.equals(requesterUsername)) {
             throw new SecurityException("Anda tidak berhak memodifikasi produk ini");
