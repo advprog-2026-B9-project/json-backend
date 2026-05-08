@@ -87,10 +87,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void deductProductStock(UUID id, Integer quantity) throws RuntimeException {
-        Product product = getProductById(id);
+        if (quantity <= 0){
+            throw new IllegalArgumentException("Jumlah pengurangan stok harus lebih dari 0");
+        }
 
+        Product product = getProductById(id);
         if (product.getStock() < quantity) {
-            throw new IllegalStateException("Stok barang tidak mencukupi. Sisa stok: " + product.getStock());
+            throw new IllegalStateException("Stok barang tidak mencukupi untuk produk: " + product.getName()
+                    ". Sisa stok: " + product.getStock());
         }
 
         product.setStock(product.getStock() - quantity);
