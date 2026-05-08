@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.infrastructure.controller;
 
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

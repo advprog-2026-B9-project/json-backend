@@ -4,11 +4,10 @@ import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
 
-import com.b9.json.jsonplatform.inventory.infrastructure.controller.ProductDetailResponse;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,13 +28,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public Product updateProduct(UUID id, Product updatedData, String ownerUsername) throws RuntimeException {
-        Product existingProduct = productRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
-
-        if (!existingProduct.getOwnerUsername().equals(ownerUsername)) {
-            throw new RuntimeException("Anda tidak berhak mengubah produk ini");
-        }
+    public Product updateProduct(UUID id, Product updatedData, String ownerUsername) {
+        Product existingProduct = findProductByIdForUpdate(id);
+        validateOwnership(existingProduct.getOwnerUsername(), ownerUsername);
 
         existingProduct.setName(updatedData.getName());
         existingProduct.setDescription(updatedData.getDescription());
@@ -57,13 +52,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void deleteProduct(UUID id, String ownerUsername) throws RuntimeException {
-        Product product = productRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
-
-        if (!product.getOwnerUsername().equals(ownerUsername)) {
-            throw new RuntimeException("Anda tidak berhak menghapus produk ini");
-        }
+    public void deleteProduct(UUID id, String ownerUsername) {
+        Product product = findProductByIdForUpdate(id);
+        validateOwnership(product.getOwnerUsername(), ownerUsername);
 
         productRepository.deleteById(id);
     }
@@ -74,10 +65,8 @@ public class ProductServiceImpl implements ProductService {
 
         return products.stream().map(product -> {
             User user = authService.findByUsername(product.getOwnerUsername());
-
             String fullName = (user != null) ? user.getFullName() : "Anonim";
             String phone = (user != null) ? user.getPhoneNumber() : "-";
-
             return new ProductDetailResponse(product, fullName, phone);
         }).toList();
     }
@@ -85,23 +74,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProductById(UUID id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
+                .orElseThrow(() -> new IllegalArgumentException("Produk tidak ditemukan"));
     }
 
     @Override
     @Transactional
-    public void deductProductStock(UUID id, Integer quantity) throws RuntimeException {
-        if (quantity <= 0){
+    public void deductProductStock(UUID id, Integer quantity) {
+        if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("Jumlah pengurangan stok harus lebih dari 0");
         }
 
-        Product product = productRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
-
+        Product product = findProductByIdForUpdate(id);
         if (product.getStock() < quantity) {
             throw new IllegalStateException(
-                "Stok tidak mencukupi untuk produk: %s. Sisa stok: %d"
-                        .formatted(product.getName(), product.getStock())
+                    "Stok tidak mencukupi untuk produk: %s. Sisa stok: %d"
+                            .formatted(product.getName(), product.getStock())
             );
         }
 
@@ -109,17 +96,14 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
-    @Override
-    @Transactional
-    public void increaseProductStock(UUID id, Integer quantity) throws RuntimeException {
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Jumlah penambahan stok harus lebih dari 0");
+    private void validateOwnership(String productOwner, String requesterUsername) {
+        if (!productOwner.equals(requesterUsername)) {
+            throw new SecurityException("Anda tidak berhak memodifikasi produk ini");
         }
+    }
 
-        Product product = productRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
-
-        product.setStock(product.getStock() + quantity);
-        productRepository.save(product);
+    private Product findProductByIdForUpdate(UUID id){
+        return productRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new IllegalArgumentException("Produk tidak ditemukan"));
     }
 }
