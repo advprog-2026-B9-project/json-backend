@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.infrastructure.controller;
 
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +72,7 @@ class ProductControllerTest {
     }
 
     @Test
-    void createProduct() throws Exception {
+    void createProduct_Success() throws Exception {
         when(productService.createProduct(any(Product.class), eq(ownerUsername))).thenReturn(sampleProduct);
 
         mockMvc.perform(post("/api/v1/products")
@@ -86,7 +87,7 @@ class ProductControllerTest {
     }
 
     @Test
-    void getAllProducts() throws Exception {
+    void getAllProducts_WithNoParams_Success() throws Exception {
         ProductDetailResponse response = new ProductDetailResponse(sampleProduct, "User 1", "08123456789");
         List<ProductDetailResponse> responses = Collections.singletonList(response);
 
@@ -103,7 +104,26 @@ class ProductControllerTest {
     }
 
     @Test
-    void getMyProducts() throws Exception {
+    void getAllProducts_WithParams_Success() throws Exception {
+        ProductDetailResponse response = new ProductDetailResponse(sampleProduct, "User 1", "08123456789");
+        List<ProductDetailResponse> responses = Collections.singletonList(response);
+
+        when(productService.getAllProductsWithDetails("produk", ownerUsername)).thenReturn(responses);
+
+        mockMvc.perform(get("/api/v1/products")
+                        .param("name", "produk")
+                        .param("jastiper", ownerUsername)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$[0].name").value(sampleProduct.getName()))
+                .andExpect(jsonPath("$[0].jastiperUsername").value(ownerUsername));
+
+        verify(productService, times(1)).getAllProductsWithDetails("produk", ownerUsername);
+    }
+
+    @Test
+    void getMyProducts_Success() throws Exception {
         List<Product> products = Collections.singletonList(sampleProduct);
         when(productService.getMyProducts(ownerUsername)).thenReturn(products);
 
@@ -118,7 +138,20 @@ class ProductControllerTest {
     }
 
     @Test
-    void updateProduct() throws Exception {
+    void getProductById_Success() throws Exception {
+        when(productService.getProductById(productId)).thenReturn(sampleProduct);
+
+        mockMvc.perform(get("/api/v1/products/{id}", productId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(productId.toString()))
+                .andExpect(jsonPath("$.name").value(sampleProduct.getName()));
+
+        verify(productService, times(1)).getProductById(productId);
+    }
+
+    @Test
+    void updateProduct_Success() throws Exception {
         when(productService.updateProduct(eq(productId), any(Product.class), eq(ownerUsername))).thenReturn(sampleProduct);
 
         mockMvc.perform(put("/api/v1/products/{id}", productId)
@@ -132,7 +165,7 @@ class ProductControllerTest {
     }
 
     @Test
-    void deleteProduct() throws Exception {
+    void deleteProduct_Success() throws Exception {
         doNothing().when(productService).deleteProduct(productId, ownerUsername);
 
         mockMvc.perform(delete("/api/v1/products/{id}", productId)
@@ -140,5 +173,29 @@ class ProductControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(productService, times(1)).deleteProduct(productId, ownerUsername);
+    }
+
+    @Test
+    void deductProductStock_Success() throws Exception {
+        doNothing().when(productService).deductProductStock(productId, 2);
+
+        mockMvc.perform(put("/api/v1/products/{id}/deduct-stock", productId)
+                        .param("quantity", "2")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(productService, times(1)).deductProductStock(productId, 2);
+    }
+
+    @Test
+    void increaseProductStock_Success() throws Exception {
+        doNothing().when(productService).increaseProductStock(productId, 3);
+
+        mockMvc.perform(put("/api/v1/products/{id}/increase-stock", productId)
+                        .param("quantity", "3")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(productService, times(1)).increaseProductStock(productId, 3);
     }
 }

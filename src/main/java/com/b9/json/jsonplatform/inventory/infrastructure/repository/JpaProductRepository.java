@@ -45,4 +45,9 @@ public class JpaProductRepository implements ProductRepository {
     public List<Product> searchProducts(String name, String jastiper) {
         return springDataRepository.searchProducts(name, jastiper);
     }
+
+    @Override
+    public Optional<Product> findByIdForUpdate(UUID id) {
+        return springDataRepository.findByIdForUpdate(id);
+    }
 }
