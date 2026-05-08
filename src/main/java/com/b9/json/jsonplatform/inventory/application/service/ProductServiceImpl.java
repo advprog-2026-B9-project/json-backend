@@ -6,6 +6,7 @@ import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 
 import com.b9.json.jsonplatform.inventory.infrastructure.controller.ProductDetailResponse;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -27,8 +28,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public Product updateProduct(UUID id, Product updatedData, String ownerUsername) throws RuntimeException {
-        Product existingProduct = productRepository.findById(id)
+        Product existingProduct = productRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
 
         if (!existingProduct.getOwnerUsername().equals(ownerUsername)) {
@@ -54,8 +56,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(UUID id, String ownerUsername) throws RuntimeException {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
 
         if (!product.getOwnerUsername().equals(ownerUsername)) {
@@ -86,14 +89,23 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deductProductStock(UUID id, Integer quantity) throws RuntimeException {
         if (quantity <= 0){
             throw new IllegalArgumentException("Jumlah pengurangan stok harus lebih dari 0");
         }
 
-        boolean success = productRepository.deductStock(id, quantity);
-        if (!success) {
-            throw new IllegalStateException("Stok tidak mencukupi atau produk tidak ditemukan");
+        Product product = productRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RuntimeException("Produk tidak ditemukan"));
+
+        if (product.getStock() < quantity) {
+            throw new IllegalStateException(
+                "Stok tidak mencukupi untuk produk: %s. Sisa stok: %d"
+                        .formatted(product.getName(), product.getStock())
+            );
         }
+
+        product.setStock(product.getStock() - quantity);
+        productRepository.save(product);
     }
 }

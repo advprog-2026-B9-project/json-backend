@@ -50,4 +50,9 @@ public class JpaProductRepository implements ProductRepository {
     public boolean deductStock(UUID id, Integer quantity) {
         return springDataRepository.deductStockIfAvailable(id, quantity) > 0;
     }
+
+    @Override
+    public Optional<Product> findByIdForUpdate(UUID id) {
+        return springDataRepository.findByIdForUpdate(id);
+    }
 }
