@@ -117,4 +117,25 @@ class JpaProductRepositoryTest {
         assertEquals(1, result.size());
         verify(springDataRepository, times(1)).searchProducts("produk", "user1");
     }
+
+    @Test
+    void testFindByIdForUpdate_Success() {
+        when(springDataRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+
+        Optional<Product> result = jpaProductRepository.findByIdForUpdate(productId);
+
+        assertTrue(result.isPresent());
+        assertEquals(productId, result.get().getId());
+        verify(springDataRepository, times(1)).findByIdForUpdate(productId);
+    }
+
+    @Test
+    void testFindByIdForUpdate_NotFound() {
+        when(springDataRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        Optional<Product> result = jpaProductRepository.findByIdForUpdate(productId);
+
+        assertTrue(result.isEmpty());
+        verify(springDataRepository, times(1)).findByIdForUpdate(productId);
+    }
 }
