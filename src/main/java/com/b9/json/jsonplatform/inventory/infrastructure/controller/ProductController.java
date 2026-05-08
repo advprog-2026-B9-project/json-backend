@@ -73,4 +73,19 @@ public class ProductController {
 
         return ResponseEntity.ok(productService.getAllProductsWithDetails(name, jastiper));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable UUID id) {
+        Product product = productService.getProductById(id);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/deduct-stock")
+    public ResponseEntity<Void> deductProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.deductProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
