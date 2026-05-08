@@ -13,4 +13,6 @@ public interface ProductService {
     List<Product> getMyProducts(String ownerUsername);
     void deleteProduct(UUID id, String ownerUsername);
     List<ProductDetailResponse> getAllProductsWithDetails(String name, String jastiper);
+    Product getProductById(UUID id);
+    void deductProductStock(UUID id, Integer quantity);
 }
