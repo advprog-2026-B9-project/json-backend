@@ -74,4 +74,8 @@ public class OrderService {
     public List<Order> getTitiperHistory(UUID titiperId) {
         return orderRepository.findByTitiperId(titiperId);
     }
+
+    public long getTotalSuccessfulOrdersByJastiper(UUID jastiperId) {
+        return orderRepository.countByJastiperIdAndStatus(jastiperId, "COMPLETED");
+    }
 }
