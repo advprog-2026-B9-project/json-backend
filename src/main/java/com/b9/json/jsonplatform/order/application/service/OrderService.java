@@ -103,4 +103,30 @@ public class OrderService {
         order.setStatus("COMPLETED");
         return orderRepository.save(order);
     }
+
+    @Transactional
+    public Order cancelAndRefundOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order tidak ditemukan"));
+
+        String currentStatus = order.getStatus();
+        if ("SHIPPED".equals(currentStatus) || "COMPLETED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
+            throw new IllegalStateException("Pesanan tidak dapat dibatalkan pada status ini");
+        }
+
+        Wallet buyerWallet = walletService.getWalletByUserId(order.getTitiperId());
+        Wallet sellerWallet = walletService.getWalletByUserId(order.getJastiperId());
+
+        Transaction refundTx = transactionService.createRefund(
+                sellerWallet.getId(), 
+                buyerWallet.getId(), 
+                order.getTotalPrice()
+        );
+        transactionService.markSuccess(refundTx.getId());
+
+        productService.increaseProductStock(order.getProductId(), order.getQuantity());
+
+        order.setStatus("CANCELLED");
+        return orderRepository.save(order);
+    }
 }

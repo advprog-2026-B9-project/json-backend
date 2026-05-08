@@ -210,4 +210,65 @@ class OrderServiceTest {
         assertEquals("Pesanan belum dikirim, tidak bisa diselesaikan", exception.getMessage());
         verify(orderRepository, never()).save(any(Order.class)); 
     }
+
+    @Test
+    void testCancelAndRefundOrder_Success() {
+        UUID orderId = UUID.randomUUID();
+        UUID titiperId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setId(orderId);
+        order.setStatus("PAID");
+        order.setTitiperId(titiperId);
+        order.setJastiperId(jastiperId);
+        order.setProductId(productId);
+        order.setQuantity(2);
+        order.setTotalPrice(new BigDecimal("200000"));
+
+        Wallet buyerWallet = mock(Wallet.class);
+        when(buyerWallet.getId()).thenReturn(UUID.randomUUID());
+
+        Wallet sellerWallet = mock(Wallet.class);
+        when(sellerWallet.getId()).thenReturn(UUID.randomUUID());
+
+        Transaction dummyRefundTx = mock(Transaction.class);
+        when(dummyRefundTx.getId()).thenReturn(UUID.randomUUID());
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(walletService.getWalletByUserId(titiperId)).thenReturn(buyerWallet);
+        when(walletService.getWalletByUserId(jastiperId)).thenReturn(sellerWallet);
+        
+        when(transactionService.createRefund(any(), any(), any())).thenReturn(dummyRefundTx);
+        
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Order canceledOrder = orderService.cancelAndRefundOrder(orderId);
+
+        assertEquals("CANCELLED", canceledOrder.getStatus());
+        verify(transactionService, times(1)).markSuccess(dummyRefundTx.getId());
+        
+        verify(productService, times(1)).increaseProductStock(productId, 2);
+        verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    void testCancelAndRefundOrder_Failed_BecauseAlreadyShipped() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("SHIPPED");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            orderService.cancelAndRefundOrder(orderId);
+        });
+
+        assertEquals("Pesanan tidak dapat dibatalkan pada status ini", exception.getMessage());
+        
+        verify(transactionService, never()).createRefund(any(), any(), any());
+        verify(productService, never()).increaseProductStock(any(), any());
+        verify(orderRepository, never()).save(any(Order.class)); 
+    }
 }
