@@ -91,13 +91,9 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("Jumlah pengurangan stok harus lebih dari 0");
         }
 
-        Product product = getProductById(id);
-        if (product.getStock() < quantity) {
-            throw new IllegalStateException("Stok barang tidak mencukupi untuk produk: " + product.getName()
-                    ". Sisa stok: " + product.getStock());
+        boolean success = productRepository.deductStock(id, quantity);
+        if (!success) {
+            throw new IllegalStateException("Stok tidak mencukupi atau produk tidak ditemukan");
         }
-
-        product.setStock(product.getStock() - quantity);
-        productRepository.save(product);
     }
 }

@@ -45,4 +45,9 @@ public class JpaProductRepository implements ProductRepository {
     public List<Product> searchProducts(String name, String jastiper) {
         return springDataRepository.searchProducts(name, jastiper);
     }
+
+    @Override
+    public boolean deductStock(UUID id, Integer quantity) {
+        return springDataRepository.deductStockIfAvailable(id, quantity) > 0;
+    }
 }
