@@ -1,0 +1,41 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram - Inventory
+
+' --- Entitas Eksternal ---
+Container(frontend, "Web Application", "Next.js", "Antarmuka pengguna (Titipers & Jastiper).")
+System_Ext(supabase, "Database", "Supabase", "Penyimpanan data relasional PostgreSQL.")
+
+Container_Boundary(backend_api, "API Application (Spring Boot)") {
+
+    ' --- Komponen Internal Modul Inventory ---
+    Boundary(inventory_module, "Inventory Module") {
+        Component(product_controller, "Product Controller", "Infrastructure/Controller", "Menangani HTTP request seperti CRUD produk dan pencarian katalog.")
+        
+        Component(product_service, "Product Service", "Application/Service", "Mengelola logika bisnis produk, validasi kepemilikan, dan manajemen stok.")
+        
+        Component(product_repo, "Product Repository", "Infrastructure/Persistence", "Mengelola akses data ke database, termasuk Pessimistic Locking untuk War.")
+    }
+
+    ' --- Komponen Lain yang Berinteraksi ---
+    Component(auth_service, "Auth Service", "Auth Module", "Menyediakan data profil pengguna (nama lengkap, telepon) untuk detail produk.")
+    
+    Component(order_service, "Order Service", "Order Module", "Meminta pengurangan/penambahan stok saat proses transaksi atau pembatalan.")
+}
+
+' --- Relasi Interaksi ---
+
+' Interaksi dari luar
+Rel(frontend, product_controller, "Mengakses API Produk", "JSON/HTTPS")
+
+' Alur internal Inventory
+Rel(product_controller, product_service, "Memanggil Use Case")
+Rel(product_service, product_repo, "Operasi Data")
+Rel(product_repo, supabase, "Query Tabel Products", "JDBC")
+
+' Interaksi antar-komponen (Cross-Module)
+Rel(product_service, auth_service, "Meminta data profil Jastiper untuk ProductDetailResponse", "Internal Call")
+Rel(order_service, product_service, "Memanggil deductProductStock / increaseProductStock", "Internal Call")
+
+@enduml
