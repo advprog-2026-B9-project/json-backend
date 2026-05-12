@@ -13,15 +13,15 @@
 
 ## Deliverable G.1: Current Architecture
 
-* **Context Diagram**: ![Context Diagram](static/images/context-diagram.png)
-* **Container Diagram**: ![Container Diagram](static/images/container-diagram.png)
+* **Context Diagram**: ![Context Diagram](static/images/context-diagram-before.png)
+* **Container Diagram**: ![Container Diagram](static/images/container-diagram-before.png)
 * **Deployment Diagram**: ![deployment diagram](static/images/Deployment-Diagram.png)
 
 ## Deliverable G.2: Future Architecture
 
 
-* **Future Context Diagram**: [Masukkan tautan/gambar Future Context Diagram di sini]
-* **Future Container Diagram**: [Masukkan tautan/gambar Future Container Diagram di sini]
+* **Future Context Diagram**: ![context-diagram-after.png](static/images/context-diagram-after.png)
+* **Future Container Diagram**: ![container-diagram-after.png](static/images/container-diagram-after.png)
 
 ## Deliverable G.3: Risk Analysis and Architecture Modification Justification
 
