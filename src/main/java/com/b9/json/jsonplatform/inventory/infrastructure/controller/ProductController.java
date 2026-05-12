@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.infrastructure.controller;
 
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -72,5 +73,29 @@ public class ProductController {
             @RequestParam(required = false) String jastiper) {
 
         return ResponseEntity.ok(productService.getAllProductsWithDetails(name, jastiper));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable UUID id) {
+        Product product = productService.getProductById(id);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/deduct-stock")
+    public ResponseEntity<Void> deductProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.deductProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/increase-stock")
+    public ResponseEntity<Void> increaseProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.increaseProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

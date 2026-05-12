@@ -1,4 +1,5 @@
-package com.b9.json.jsonplatform.inventory.infrastructure.controller;
+package com.b9.json.jsonplatform.inventory.application.dto;
+
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 
 import lombok.Getter;
