@@ -57,3 +57,15 @@ jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa ta
 ### [Nama] - [NPM]
 * **Component Diagram**: [Masukkan tautan/gambar Component Diagram individual]
 * **Code Diagram**: [Masukkan tautan/gambar Code Diagram individual]
+
+### Rafasya M. Subhan - 2406409542
+* **Component Diagram**: ![Auth's Component Diagram](static/images/Component%20Diagram%20-%20Auth.png)
+* **Code Diagram**:
+### 1. Entity and Domain Model
+![Entity & Domain Model.png](static/images/Entity%20%26%20Domain%20Model.png)
+### 2. Controller & DTO
+![Controller & DTOs.png](static/images/Controller%20%26%20DTOs.png)
+### 3. Service Layer & Repository
+![Service Layer & Repository.png](static/images/Service%20Layer%20%26%20Repository.png)
+### 4. Cross-Module Interactions
+![Cross-Module Interactions.png](static/images/Cross-Module%20Interactions.png)
