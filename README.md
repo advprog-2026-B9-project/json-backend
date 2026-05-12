@@ -25,10 +25,33 @@
 
 ## Deliverable G.3: Risk Analysis and Architecture Modification Justification
 
-[Tuliskan 2-3 paragraf penjelasan mengenai analisis risiko menggunakan teknik Risk Storming dan berikan justifikasi mengapa modifikasi arsitektur tersebut diperlukan di sini.]
+Coba bayangkan kalau aplikasi JSON (JaStip Online Nasional) ini beneran sukses besar, 
+misalnya lagi ada event "war" jastip barang limited edition atau tiket konser yang bikin traffic 
+meledak tiba-tiba. Kalau kita masih mempertahankan arsitektur Monolithic seperti sekarang, 
+ada beberapa risiko sistemik yang cukup bahaya.
 
----
+Berdasarkan teknik Risk Storming yang kami lakukan, kami menemukan tiga risiko utama:
 
+1. Titik Mati Tersentralisasi (Single Point of Failure): Saat ribuan orang rebutan checkout, 
+beban di modul Order dan Wallet bakal sangat tinggi. Karena semua modul menyatu di 
+satu server, modul lain seperti Auth (buat login) atau Inventory (katalog) bakal ikut 
+nge-hang atau mati karena kehabisan RAM/CPU.
+
+2. Database Bottleneck: Saat ini semua modul menembak ke satu database Supabase yang sama. 
+Kalau proses write untuk pesanan dan potong saldo terjadi massal, database bisa mengalami table locking yang bikin seluruh aplikasi jadi super lemot.
+
+3. Agility Deployment: Kalau ada bug kecil di fitur dompet dan kita mau update kodenya, 
+kita terpaksa harus me-restart keseluruhan sistem, yang berarti bikin downtime buat semua user.
+
+Kami menggunakan metode Risk Storming karena teknik ini ngebantu banget buat memvisualisasikan masalah secara kolaboratif. 
+Dengan menaruh indikator risiko langsung di atas diagram arsitektur, kami jadi bisa melihat dengan jelas komponen mana 
+yang paling rentan jadi bottleneck sebelum aplikasinya beneran down di production.
+
+Untuk mengatasi risiko-risiko di atas, kami memutuskan untuk memodifikasi arsitektur menjadi Microservices. 
+Dengan memecah aplikasi menjadi service yang independen (Auth, Inventory, Order, Wallet) dan memisahkan databasenya (database-per-service), kita bisa melakukan Independent Scalability.
+Artinya, pas lagi war jastip, kita cukup scale up kapasitas server untuk Order Service dan Wallet Service saja tanpa membebani service lain. 
+Selain itu, kami juga menambahkan API Gateway untuk merutekan traffic dengan lebih rapi. Arsitektur baru ini bikin sistem JSON 
+jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa takut server crash massal.
 ## Deliverable Individual
 
 ### [Nama] - [NPM]
