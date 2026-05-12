@@ -59,8 +59,8 @@ jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa ta
 * **Code Diagram**: [Masukkan tautan/gambar Code Diagram individual]
 
 ### Rafasya M. Subhan - 2406409542
-* **Component Diagram**: ![Auth's Component Diagram](static/images/Component%20Diagram%20-%20Auth.png)
-* **Code Diagram**:
+* **Component Diagram**: ![Component Diagram - Auth.png](static/images/Component%20Diagram%20-%20Auth.png)
+* **Code Diagram**: 
 ### 1. Entity and Domain Model
 ![Entity & Domain Model.png](static/images/Entity%20%26%20Domain%20Model.png)
 ### 2. Controller & DTO
