@@ -8,8 +8,9 @@ public interface AuthService {
     User loginUser(String email, String password);
     User updateProfile(String email, User updatedUser);
     User findByEmail(String email);
+    User findByUsername(String username);
     List<User> findAllUsers();
-    User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl);
-    List<User> findPendingKyc();
-    User reviewKyc(String email, boolean approved);
+    User demoteJastiper(String email);
+    User banUser(String email);
+    long countSuccessfulTransactions(String email);
 }

@@ -2,11 +2,12 @@ package com.b9.json.jsonplatform.order.application.service;
 
 import com.b9.json.jsonplatform.order.domain.Order;
 import com.b9.json.jsonplatform.order.infrastructure.repository.OrderRepository;
-import com.b9.json.jsonplatform.order.application.external.InventoryServiceDummy;
 import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
+import com.b9.json.jsonplatform.inventory.application.service.ProductService;
+import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -18,9 +19,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class OrderServiceTest {
@@ -32,8 +33,8 @@ class OrderServiceTest {
     @Mock
     private TransactionServiceImpl transactionService; 
     @Mock
-    private InventoryServiceDummy inventoryService;
-
+    private ProductService productService;
+    
     @InjectMocks
     private OrderService orderService;
 
@@ -62,17 +63,18 @@ class OrderServiceTest {
         UUID buyerWalletId = UUID.randomUUID();
         UUID sellerWalletId = UUID.randomUUID();
         UUID transactionId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
 
         Order order = new Order();
         order.setTitiperId(titiperId);
         order.setJastiperId(jastiperId);
-        order.setProductId(1L);
+        order.setProductId(productId);
         order.setQuantity(5);
         order.setTotalPrice(new BigDecimal("50000"));
 
         Wallet buyerWallet = mock(Wallet.class);
         when(buyerWallet.getId()).thenReturn(buyerWalletId);
-        when(buyerWallet.getBalance()).thenReturn(new BigDecimal("100000")); // Saldo cukup
+        when(buyerWallet.getBalance()).thenReturn(new BigDecimal("100000"));
 
         Wallet sellerWallet = mock(Wallet.class);
         when(sellerWallet.getId()).thenReturn(sellerWalletId);
@@ -80,7 +82,12 @@ class OrderServiceTest {
         Transaction dummyTx = mock(Transaction.class);
         when(dummyTx.getId()).thenReturn(transactionId);
 
-        when(inventoryService.isStockAvailable(1L, 5)).thenReturn(true);
+        Product dummyProduct = new Product();
+        dummyProduct.setId(productId);
+        dummyProduct.setStock(10); 
+        
+        when(productService.getProductById(productId)).thenReturn(dummyProduct);
+
         when(walletService.getWalletByUserId(titiperId)).thenReturn(buyerWallet);
         when(walletService.getWalletByUserId(jastiperId)).thenReturn(sellerWallet);
         when(transactionService.createPayment(any(), any(), any())).thenReturn(dummyTx);
@@ -91,12 +98,105 @@ class OrderServiceTest {
         assertNotNull(result);
         assertEquals("PAID", result.getStatus());
         verify(transactionService, times(1)).markSuccess(transactionId);
-        verify(inventoryService, times(1)).reserveStock(1L, 5);
+        verify(productService, times(1)).deductProductStock(productId, 5); // Verifikasi deduct product
         verify(orderRepository, times(1)).save(order);
     }
 
     @Test
-    void testUpdateStatusFromPaidToCompletedShouldThrowException() {
+    void testGetTitiperHistory() {
+        Order o1 = new Order();
+        UUID titiperId = UUID.randomUUID();
+        o1.setTitiperId(titiperId);
+        List<Order> history = Arrays.asList(o1);
+
+        when(orderRepository.findByTitiperId(titiperId)).thenReturn(history);
+
+        List<Order> result = orderService.getTitiperHistory(titiperId);
+
+        assertEquals(1, result.size());
+        assertEquals(titiperId, result.get(0).getTitiperId());
+    }
+
+    @Test
+    void testUpdateStatusToPurchased_Success() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("PAID");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Order updatedOrder = orderService.updateStatusToPurchased(orderId);
+
+        assertEquals("PURCHASED", updatedOrder.getStatus());
+        verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    void testUpdateStatusToPurchased_Failed_BecauseNotPaid() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("PENDING");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            orderService.updateStatusToPurchased(orderId);
+        });
+
+        assertEquals("Hanya pesanan berstatus PAID yang bisa diproses", exception.getMessage());
+        verify(orderRepository, never()).save(any(Order.class)); 
+    }
+
+    @Test
+    void testUpdateStatusToShipped_Success() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("PURCHASED");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Order updatedOrder = orderService.updateStatusToShipped(orderId, "RESI-JNE-12345");
+
+        assertEquals("SHIPPED", updatedOrder.getStatus());
+        assertEquals("RESI-JNE-12345", updatedOrder.getTrackingNumber());
+        verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    void testUpdateStatusToShipped_Failed_BecauseNotPurchased() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("PAID"); 
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            orderService.updateStatusToShipped(orderId, "RESI-JNE-12345");
+        });
+
+        assertEquals("Pesanan harus berstatus PURCHASED sebelum dikirim", exception.getMessage());
+        verify(orderRepository, never()).save(any(Order.class)); 
+    }
+
+    @Test
+    void testUpdateStatusToCompleted_Success() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("SHIPPED");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Order updatedOrder = orderService.updateStatusToCompleted(orderId);
+
+        assertEquals("COMPLETED", updatedOrder.getStatus());
+        verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    void testUpdateStatusToCompleted_Failed_BecauseNotShipped() {
         Order order = new Order();
         order.setStatus("PAID");
         UUID dummyOrderId = UUID.randomUUID();
@@ -104,37 +204,10 @@ class OrderServiceTest {
         when(orderRepository.findById(dummyOrderId)).thenReturn(Optional.of(order));
 
         Exception exception = assertThrows(IllegalStateException.class, () -> {
-            orderService.updateStatus(dummyOrderId, "COMPLETED");
+            orderService.updateStatusToCompleted(dummyOrderId);
         });
 
-        assertEquals("Pesanan harus dikirim (SHIPPED) sebelum selesai", exception.getMessage());
-    }
-
-    @Test
-    void testUpdateStatusToShippedShouldSuccess() {
-        Order order = new Order();
-        order.setStatus("PAID");
-        UUID dummyOrderId = UUID.randomUUID();
-
-        when(orderRepository.findById(dummyOrderId)).thenReturn(Optional.of(order));
-        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
-
-        Order result = orderService.updateStatus(dummyOrderId, "SHIPPED");
-
-        assertEquals("SHIPPED", result.getStatus());
-    }
-
-    @Test
-    void testGetTitiperHistory() {
-        Order o1 = new Order();
-        o1.setTitiperId(1L);
-        List<Order> history = Arrays.asList(o1);
-
-        when(orderRepository.findByTitiperId(1L)).thenReturn(history);
-
-        List<Order> result = orderService.getTitiperHistory(1L);
-
-        assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).getTitiperId());
+        assertEquals("Pesanan belum dikirim, tidak bisa diselesaikan", exception.getMessage());
+        verify(orderRepository, never()).save(any(Order.class)); 
     }
 }

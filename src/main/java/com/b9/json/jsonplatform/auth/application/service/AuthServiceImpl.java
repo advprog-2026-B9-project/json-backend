@@ -1,9 +1,11 @@
 package com.b9.json.jsonplatform.auth.application.service;
 
+import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
-import com.b9.json.jsonplatform.wallet.domain.Wallet;
-import com.b9.json.jsonplatform.wallet.domain.WalletRepository;
+import com.b9.json.jsonplatform.wallet.application.WalletService;
+import com.b9.json.jsonplatform.wallet.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,7 +21,10 @@ public class AuthServiceImpl implements AuthService {
     private UserRepository userRepository;
 
     @Autowired
-    private WalletRepository walletRepository;
+    private WalletService walletService;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private String resolveUsername(String requestedUsername, String email) {
@@ -43,10 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Every newly registered user should have exactly one wallet.
-        if (walletRepository.findByUserId(savedUser.getId()).isEmpty()) {
-            walletRepository.save(new Wallet(savedUser.getId()));
-        }
+        walletService.createWallet(savedUser.getId());
 
         return savedUser;
     }
@@ -85,37 +87,50 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl) {
+    public User demoteJastiper(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null && UserRole.JASTIPER.equals(user.getRole())) {
+            user.setRole(UserRole.TITIPERS);
+            user.setKycStatus(KycStatus.UNVERIFIED);
+            return userRepository.save(user);
+        }
+        return null;
+    }
+
+    @Override
+    public User banUser(String email) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
-            user.setFullName(fullName);
-            user.setNikKtp(nikKtp);
-            user.setKtpImageUrl(ktpImageUrl);
-            user.setKycStatus("PENDING_VERIFICATION"); // Mengubah status
+            user.setBanned(true);
             return userRepository.save(user);
         }
         return null;
     }
 
     @Override
-    public List<User> findPendingKyc() {
-        return userRepository.findAll().stream()
-                .filter(u -> "PENDING_VERIFICATION".equals(u.getKycStatus()))
-                .toList();
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 
     @Override
-    public User reviewKyc(String email, boolean approved) {
+    public long countSuccessfulTransactions(String email) {
         User user = userRepository.findByEmail(email);
-        if (user != null && "PENDING_VERIFICATION".equals(user.getKycStatus())) {
-            if (approved) {
-                user.setKycStatus("VERIFIED");
-                user.setRole("JASTIPER"); // Upgrade peran Titipers -> Jastiper
-            } else {
-                user.setKycStatus("REJECTED");
-            }
-            return userRepository.save(user);
+        if (user == null) return 0;
+
+        Wallet wallet;
+        try {
+            wallet = walletService.getWalletByUserId(user.getId());
         }
-        return null;
+        catch (Exception e) {
+            return 0;
+        }
+
+        // TODO: hubungkan ke Order jika fitur Order sudah selesai,
+        //       idealnya hitung dari Order dengan status COMPLETED milik Jastiper
+        return transactionRepository.findByWalletId(wallet.getId())
+                .stream()
+                .filter(t -> TransactionStatus.SUCCESS.equals(t.getStatus())
+                        && TransactionType.PAYMENT.equals(t.getType()))
+                .count();
     }
 }

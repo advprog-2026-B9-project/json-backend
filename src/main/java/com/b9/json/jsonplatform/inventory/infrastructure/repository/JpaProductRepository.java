@@ -40,4 +40,14 @@ public class JpaProductRepository implements ProductRepository {
     public void deleteById(UUID id) {
         springDataRepository.deleteById(id);
     }
+
+    @Override
+    public List<Product> searchProducts(String name, String jastiper) {
+        return springDataRepository.searchProducts(name, jastiper);
+    }
+
+    @Override
+    public Optional<Product> findByIdForUpdate(UUID id) {
+        return springDataRepository.findByIdForUpdate(id);
+    }
 }

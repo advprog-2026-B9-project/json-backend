@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.infrastructure.controller;
 
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,12 +38,6 @@ public class ProductController {
 
         Product createdProduct = productService.createProduct(product, ownerUsername);
         return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     @GetMapping("/me")
@@ -69,5 +65,37 @@ public class ProductController {
 
         productService.deleteProduct(id, ownerUsername);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProductDetailResponse>> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String jastiper) {
+
+        return ResponseEntity.ok(productService.getAllProductsWithDetails(name, jastiper));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable UUID id) {
+        Product product = productService.getProductById(id);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/deduct-stock")
+    public ResponseEntity<Void> deductProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.deductProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/increase-stock")
+    public ResponseEntity<Void> increaseProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.increaseProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
