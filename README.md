@@ -86,21 +86,16 @@ jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa ta
 * **Component Diagram**:
     * **Component Diagram - Modul Order (API Application)**
       ![Component Diagram Modul Order](static/images/component-diagram-order.png)
-      *Diagram ini memetakan interaksi internal komponen pada Modul Order beserta integrasinya secara spesifik dengan Modul Inventory dan Wallet.*
-
+    
 * **Code Diagram**:
     * **1. Domain Layer (Order Entity)**
       ![Code Diagram - Domain Layer](static/images/code-diagram-order.png)
-      *Diagram kelas untuk entitas Order yang merepresentasikan skema tabel di dalam database.*
-
+    
     * **2. Repository Layer (Data Access)**
       ![Code Diagram - Repository Layer](static/images/code-diagram-order-repository.png)
-      *Diagram antarmuka OrderRepository yang mengelola kueri kustom ke database.*
-
+    
     * **3. Service Layer (Business Logic)**
       ![Code Diagram - Service Layer](static/images/code-diagram-order-service.png)
-      *Diagram pusat logika bisnis yang menunjukkan orkestrasi pemesanan, validasi, pembayaran, pembatalan (refund), dan pembaruan stok lintas modul.*
-
+    
     * **4. Controller Layer (REST API)**
       ![Code Diagram - Controller Layer](static/images/code-diagram-order-controller.png)
-      *Diagram titik masuk klien yang menangani permintaan HTTP dan meneruskannya ke lapisan layanan.*
