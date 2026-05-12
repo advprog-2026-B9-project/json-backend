@@ -58,6 +58,18 @@ jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa ta
 * **Component Diagram**: [Masukkan tautan/gambar Component Diagram individual]
 * **Code Diagram**: [Masukkan tautan/gambar Code Diagram individual]
 
+### Azzahra Anjelika Borselano - 2406419663
+* **Component Diagram**:  ![component diagram wallet/transaction](static/images/Component-diagram-wallet.png)
+* **Code Diagram**:  
+### 1. Wallet  
+ ![alt text](static/images/wallet.png)
+### 2. Transaction  
+![alt text](static/images/transaction.png)
+### 3. Enum & Entity Relationship  
+![alt text](static/images/enumentity.png)
+### 4. Service Interaction Diagram  
+![alt text](static/images/serviceinteraction.png) 
+
 ### Rafasya M. Subhan - 2406409542
 * **Component Diagram**: ![Component Diagram - Auth.png](static/images/Component%20Diagram%20-%20Auth.png)
 * **Code Diagram**: 
