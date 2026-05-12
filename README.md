@@ -13,24 +13,102 @@
 
 ## Deliverable G.1: Current Architecture
 
-* **Context Diagram**: ![Context Diagram](static/images/context-diagram.png)
-* **Container Diagram**: ![Container Diagram](static/images/container-diagram.png)
-* **Deployment Diagram**: [Masukkan tautan/gambar Deployment Diagram saat ini di sini]
+* **Context Diagram**: ![Context Diagram](static/images/context-diagram-before.png)
+* **Container Diagram**: ![Container Diagram](static/images/container-diagram-before.png)
+* **Deployment Diagram**: ![deployment diagram](static/images/Deployment-Diagram.png)
 
 ## Deliverable G.2: Future Architecture
 
 
-* **Future Context Diagram**: [Masukkan tautan/gambar Future Context Diagram di sini]
-* **Future Container Diagram**: [Masukkan tautan/gambar Future Container Diagram di sini]
+* **Future Context Diagram**: ![context-diagram-after.png](static/images/context-diagram-after.png)
+* **Future Container Diagram**: ![container-diagram-after.png](static/images/container-diagram-after.png)
 
 ## Deliverable G.3: Risk Analysis and Architecture Modification Justification
 
-[Tuliskan 2-3 paragraf penjelasan mengenai analisis risiko menggunakan teknik Risk Storming dan berikan justifikasi mengapa modifikasi arsitektur tersebut diperlukan di sini.]
+Coba bayangkan kalau aplikasi JSON (JaStip Online Nasional) ini beneran sukses besar, 
+misalnya lagi ada event "war" jastip barang limited edition atau tiket konser yang bikin traffic 
+meledak tiba-tiba. Kalau kita masih mempertahankan arsitektur Monolithic seperti sekarang, 
+ada beberapa risiko sistemik yang cukup bahaya.
 
----
+Berdasarkan teknik Risk Storming yang kami lakukan, kami menemukan tiga risiko utama:
+
+1. Titik Mati Tersentralisasi (Single Point of Failure): Saat ribuan orang rebutan checkout, 
+beban di modul Order dan Wallet bakal sangat tinggi. Karena semua modul menyatu di 
+satu server, modul lain seperti Auth (buat login) atau Inventory (katalog) bakal ikut 
+nge-hang atau mati karena kehabisan RAM/CPU.
+
+2. Database Bottleneck: Saat ini semua modul menembak ke satu database Supabase yang sama. 
+Kalau proses write untuk pesanan dan potong saldo terjadi massal, database bisa mengalami table locking yang bikin seluruh aplikasi jadi super lemot.
+
+3. Agility Deployment: Kalau ada bug kecil di fitur dompet dan kita mau update kodenya, 
+kita terpaksa harus me-restart keseluruhan sistem, yang berarti bikin downtime buat semua user.
+
+Kami menggunakan metode Risk Storming karena teknik ini ngebantu banget buat memvisualisasikan masalah secara kolaboratif. 
+Dengan menaruh indikator risiko langsung di atas diagram arsitektur, kami jadi bisa melihat dengan jelas komponen mana 
+yang paling rentan jadi bottleneck sebelum aplikasinya beneran down di production.
+
+Untuk mengatasi risiko-risiko di atas, kami memutuskan untuk memodifikasi arsitektur menjadi Microservices. 
+Dengan memecah aplikasi menjadi service yang independen (Auth, Inventory, Order, Wallet) dan memisahkan databasenya (database-per-service), kita bisa melakukan Independent Scalability.
+Artinya, pas lagi war jastip, kita cukup scale up kapasitas server untuk Order Service dan Wallet Service saja tanpa membebani service lain. 
+Selain itu, kami juga menambahkan API Gateway untuk merutekan traffic dengan lebih rapi. Arsitektur baru ini bikin sistem JSON 
+jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa takut server crash massal.
 
 ## Deliverable Individual
 
-### [Nama] - [NPM]
-* **Component Diagram**: [Masukkan tautan/gambar Component Diagram individual]
-* **Code Diagram**: [Masukkan tautan/gambar Code Diagram individual]
+### Azzahra Anjelika Borselano - 2406419663
+* **Component Diagram**:  ![component diagram wallet/transaction](static/images/Component-diagram-wallet.png)
+* **Code Diagram**:  
+### 1. Wallet  
+ ![alt text](static/images/wallet.png)
+### 2. Transaction  
+![alt text](static/images/transaction.png)
+### 3. Enum & Entity Relationship  
+![alt text](static/images/enumentity.png)
+### 4. Service Interaction Diagram  
+![alt text](static/images/serviceinteraction.png) 
+
+### Rafasya M. Subhan - 2406409542
+* **Component Diagram**: ![Component Diagram - Auth.png](static/images/Component%20Diagram%20-%20Auth.png)
+* **Code Diagram**: 
+### 1. Entity and Domain Model
+![Entity & Domain Model.png](static/images/Entity%20%26%20Domain%20Model.png)
+### 2. Controller & DTO
+![Controller & DTOs.png](static/images/Controller%20%26%20DTOs.png)
+### 3. Service Layer & Repository
+![Service Layer & Repository.png](static/images/Service%20Layer%20%26%20Repository.png)
+### 4. Cross-Module Interactions
+![Cross-Module Interactions.png](static/images/Cross-Module%20Interactions.png)
+
+### Abigail Namaratonggi - 2406495773
+* **Component Diagram**:
+    * **Component Diagram - Modul Order (API Application)**
+      ![Component Diagram Modul Order](static/images/component-diagram-order.png)
+    
+* **Code Diagram**:
+    * **1. Domain Layer (Order Entity)**
+      ![Code Diagram - Domain Layer](static/images/code-diagram-order.png)
+    
+    * **2. Repository Layer (Data Access)**
+      ![Code Diagram - Repository Layer](static/images/code-diagram-order-repository.png)
+    
+    * **3. Service Layer (Business Logic)**
+      ![Code Diagram - Service Layer](static/images/code-diagram-order-service.png)
+    
+    * **4. Controller Layer (REST API)**
+      ![Code Diagram - Controller Layer](static/images/code-diagram-order-controller.png)
+
+### Faris Huda - 2406421970
+* **Component Diagram**: ![Component Diagram - Inventory.png](static/images/component-inventory.png)
+
+* **Code Diagram**: 
+    ### 1. Domain Layer
+    ![Code Diagram - Domain Layer](static/images/code-inventory-domain.png)
+
+    ### 2. Application Layer
+    ![Code Diagram - Inventory Layer](static/images/code-inventory-application.png)
+
+    ### 3. Web Infrastructure Layer
+    ![Code Diagram - Web Infrastructure Layer](static/images/code-inventory-infrastructure-web.png)
+
+    ### 4. Persistence Infrastructure Layer
+    ![Code Diagram - Persistence Infrastructure Layer](static/images/code-inventory-infrastructure-persistence.png)
