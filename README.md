@@ -13,8 +13,8 @@
 
 ## Deliverable G.1: Current Architecture
 
-* **Context Diagram**: [Masukkan tautan/gambar Context Diagram saat ini di sini]
-* **Container Diagram**: [Masukkan tautan/gambar Container Diagram saat ini di sini]
+* **Context Diagram**: ![Context Diagram](static/images/context-diagram.png)
+* **Container Diagram**: ![Container Diagram](static/images/container-diagram.png)
 * **Deployment Diagram**: ![deployment diagram](static/images/Deployment-Diagram.png)
 
 ## Deliverable G.2: Future Architecture
