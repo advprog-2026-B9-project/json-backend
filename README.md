@@ -15,7 +15,7 @@
 
 * **Context Diagram**: [Masukkan tautan/gambar Context Diagram saat ini di sini]
 * **Container Diagram**: [Masukkan tautan/gambar Container Diagram saat ini di sini]
-* **Deployment Diagram**: [Masukkan tautan/gambar Deployment Diagram saat ini di sini]
+* **Deployment Diagram**: ![deployment diagram](static/images/Deployment-Diagram.png)
 
 ## Deliverable G.2: Future Architecture
 
