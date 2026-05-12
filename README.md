@@ -52,11 +52,8 @@ Dengan memecah aplikasi menjadi service yang independen (Auth, Inventory, Order,
 Artinya, pas lagi war jastip, kita cukup scale up kapasitas server untuk Order Service dan Wallet Service saja tanpa membebani service lain. 
 Selain itu, kami juga menambahkan API Gateway untuk merutekan traffic dengan lebih rapi. Arsitektur baru ini bikin sistem JSON 
 jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa takut server crash massal.
-## Deliverable Individual
 
-### [Nama] - [NPM]
-* **Component Diagram**: [Masukkan tautan/gambar Component Diagram individual]
-* **Code Diagram**: [Masukkan tautan/gambar Code Diagram individual]
+## Deliverable Individual
 
 ### Azzahra Anjelika Borselano - 2406419663
 * **Component Diagram**:  ![component diagram wallet/transaction](static/images/Component-diagram-wallet.png)
@@ -99,3 +96,19 @@ jauh lebih tangguh (High Availability) dan siap menampung lonjakan user tanpa ta
     
     * **4. Controller Layer (REST API)**
       ![Code Diagram - Controller Layer](static/images/code-diagram-order-controller.png)
+
+### Faris Huda - 2406421970
+* **Component Diagram**: ![Component Diagram - Inventory.png](static/images/component-inventory.png)
+
+* **Code Diagram**: 
+    ### 1. Domain Layer
+    ![Code Diagram - Domain Layer](static/images/code-inventory-domain.png)
+
+    ### 2. Application Layer
+    ![Code Diagram - Inventory Layer](static/images/code-inventory-application.png)
+
+    ### 3. Web Infrastructure Layer
+    ![Code Diagram - Web Infrastructure Layer](static/images/code-inventory-infrastructure-web.png)
+
+    ### 4. Persistence Infrastructure Layer
+    ![Code Diagram - Persistence Infrastructure Layer](static/images/code-inventory-infrastructure-persistence.png)
