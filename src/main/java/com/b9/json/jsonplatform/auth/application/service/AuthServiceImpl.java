@@ -53,7 +53,6 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         User savedUser = userRepository.save(user);
-
         walletService.createWallet(savedUser.getId());
 
         return savedUser;
@@ -116,6 +115,24 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Override
+    @Transactional
+    public User updateJastiperRating(String email, double incomingRating) {
+        User user = userRepository.findByEmail(email);
+        if (user != null && UserRole.JASTIPER.equals(user.getRole())) {
+            int currentReviews = user.getTotalReviews();
+            double currentRating = user.getRating();
+
+            double newRating = ((currentRating * currentReviews) + incomingRating) / (currentReviews + 1);
+
+            user.setRating(Math.round(newRating * 100.0) / 100.0);
+            user.setTotalReviews(currentReviews + 1);
+
+            return userRepository.save(user);
+        }
+        return null;
     }
 
     @Override

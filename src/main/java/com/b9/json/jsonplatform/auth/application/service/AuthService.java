@@ -13,4 +13,5 @@ public interface AuthService {
     User demoteJastiper(String email);
     User banUser(String email);
     long countSuccessfulTransactions(String email);
+    User updateJastiperRating(String email, double newRating);
 }
