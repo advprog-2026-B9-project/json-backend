@@ -17,6 +17,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
+    private static final double ROUNDING_FACTOR = 100.0;
 
     private final ProductRepository productRepository;
     private final AuthService authService;
@@ -99,7 +100,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void increaseProductStock(UUID id, Integer quantity) throws RuntimeException {
+    public void increaseProductStock(UUID id, Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new InvalidStockQuantityException("Jumlah penambahan stok harus lebih dari 0");
         }
@@ -144,7 +145,7 @@ public class ProductServiceImpl implements ProductService {
         product.setTotalRatingScore(product.getTotalRatingScore() + ratingScore);
 
         double newAverage = (double) product.getTotalRatingScore() / product.getTotalReviews();
-        newAverage = Math.round(newAverage * 100.0) / 100.0;
+        newAverage = Math.round(newAverage * ROUNDING_FACTOR) / ROUNDING_FACTOR;
         product.setAverageRating(newAverage);
 
         productRepository.save(product);
