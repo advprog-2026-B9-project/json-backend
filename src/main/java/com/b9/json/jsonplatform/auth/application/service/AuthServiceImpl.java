@@ -17,16 +17,18 @@ import java.util.List;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final WalletService walletService;
+    private final TransactionRepository transactionRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private WalletService walletService;
+    public AuthServiceImpl(UserRepository userRepository, WalletService walletService, TransactionRepository transactionRepository) {
+        this.userRepository = userRepository;
+        this.walletService = walletService;
+        this.transactionRepository = transactionRepository;
+        this.passwordEncoder = new BCryptPasswordEncoder();
+    }
 
-    @Autowired
-    private TransactionRepository transactionRepository;
-
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private String resolveUsername(String requestedUsername, String email) {
         if (email == null) {
             return (requestedUsername != null && !requestedUsername.trim().isEmpty())
@@ -43,11 +45,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public User registerUser(User user) {
+        if (userRepository.findByEmail(user.getEmail()) != null) {
+            throw new IllegalArgumentException("Email sudah digunakan");
+        }
+
         user.setUsername(resolveUsername(user.getUsername(), user.getEmail()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         User savedUser = userRepository.save(user);
-
         walletService.createWallet(savedUser.getId());
 
         return savedUser;
