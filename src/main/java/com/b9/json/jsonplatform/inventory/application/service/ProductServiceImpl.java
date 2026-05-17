@@ -112,6 +112,28 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+    @Override
+    @Transactional
+    public void adminDeleteProduct(UUID id) {
+        Product product = findProductByIdForUpdate(id);
+        productRepository.deleteById(product.getId());
+    }
+
+    @Override
+    @Transactional
+    public Product adminUpdateProduct(UUID id, Product updatedProduct) {
+        Product existingProduct = findProductByIdForUpdate(id);
+
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setDescription(updatedProduct.getDescription());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        existingProduct.setStock(updatedProduct.getStock());
+        existingProduct.setOriginCountry(updatedProduct.getOriginCountry());
+        existingProduct.setArrivalDate(updatedProduct.getArrivalDate());
+
+        return productRepository.save(existingProduct);
+    }
+
     private void validateOwnership(String productOwner, String requesterUsername) {
         if (!productOwner.equals(requesterUsername)) {
             throw new ProductOwnershipException("Anda tidak berhak memodifikasi produk ini");
