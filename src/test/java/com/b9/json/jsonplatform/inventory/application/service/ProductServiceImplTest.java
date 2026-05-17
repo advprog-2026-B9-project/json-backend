@@ -282,7 +282,7 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void testForceDeleteProductByAdmin_Success() {
+    void testAdminDeleteProduct_Success() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
         doNothing().when(productRepository).deleteById(productId);
 
@@ -293,7 +293,7 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void testForceDeleteProductByAdmin_NotFound() {
+    void testAdminDeleteProduct_NotFound() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
 
         assertThrows(ProductNotFoundException.class, () -> productService.adminDeleteProduct(productId));
@@ -302,7 +302,7 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void testForceUpdateProductByAdmin_Success() {
+    void testAdminUpdateProduct_Success() {
         Product updatedInfo = Product.builder()
                 .name("Product yang akan di-takedown")
                 .price(new BigDecimal("0"))
@@ -314,12 +314,12 @@ class ProductServiceImplTest {
 
         Product result = productService.adminUpdateProduct(productId, updatedInfo);
 
-        assertEquals("Produk Take-Down Admin", result.getName());
+        assertEquals("Product yang akan di-takedown", result.getName());
         verify(productRepository, times(1)).save(any(Product.class));
     }
 
     @Test
-    void testForceUpdateProductByAdmin_NotFound() {
+    void testAdminUpdateProduct_NotFound() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
 
         assertThrows(ProductNotFoundException.class, () -> productService.adminUpdateProduct(productId, sampleProduct));

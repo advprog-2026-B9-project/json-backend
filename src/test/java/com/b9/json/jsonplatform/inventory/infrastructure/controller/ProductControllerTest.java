@@ -198,4 +198,29 @@ class ProductControllerTest {
 
         verify(productService, times(1)).increaseProductStock(productId, 3);
     }
+
+    @Test
+    void testAdminUpdateProduct_Success() throws Exception {
+        when(productService.adminUpdateProduct(eq(productId), any(Product.class))).thenReturn(sampleProduct);
+
+        mockMvc.perform(put("/api/v1/products/admin/{id}", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sampleProduct)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(productId.toString()))
+                .andExpect(jsonPath("$.name").value(sampleProduct.getName()));
+
+        verify(productService, times(1)).adminUpdateProduct(eq(productId), any(Product.class));
+    }
+
+    @Test
+    void testAdminDeleteProduct_Success() throws Exception {
+        doNothing().when(productService).adminDeleteProduct(productId);
+
+        mockMvc.perform(delete("/api/v1/products/admin/{id}", productId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+        verify(productService, times(1)).adminDeleteProduct(productId);
+    }
 }
