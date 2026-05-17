@@ -2,10 +2,7 @@ package com.b9.json.jsonplatform.inventory.application.service;
 
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.domain.User;
-import com.b9.json.jsonplatform.inventory.application.exception.InsufficientStockException;
-import com.b9.json.jsonplatform.inventory.application.exception.InvalidStockQuantityException;
-import com.b9.json.jsonplatform.inventory.application.exception.ProductNotFoundException;
-import com.b9.json.jsonplatform.inventory.application.exception.ProductOwnershipException;
+import com.b9.json.jsonplatform.inventory.application.exception.*;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
@@ -325,5 +322,42 @@ class ProductServiceImplTest {
         assertThrows(ProductNotFoundException.class, () -> productService.adminUpdateProduct(productId, sampleProduct));
 
         verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void testAddProductRating_Success() {
+        sampleProduct.setTotalReviews(1);
+        sampleProduct.setTotalRatingScore(4);
+        sampleProduct.setAverageRating(4.0);
+
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+        when(productRepository.save(any(Product.class))).thenReturn(sampleProduct);
+
+        assertDoesNotThrow(() -> productService.addProductRating(productId, 5));
+
+        assertEquals(2, sampleProduct.getTotalReviews());
+        assertEquals(9, sampleProduct.getTotalRatingScore());
+        assertEquals(4.5, sampleProduct.getAverageRating());
+
+        verify(productRepository, times(1)).save(sampleProduct);
+    }
+
+    @Test
+    void testAddProductRating_Failure_InvalidScore() {
+        assertThrows(InvalidRatingScoreException.class, () -> productService.addProductRating(productId, 0));
+        assertThrows(InvalidRatingScoreException.class, () -> productService.addProductRating(productId, 6));
+        assertThrows(InvalidRatingScoreException.class, () -> productService.addProductRating(productId, null));
+
+        verify(productRepository, never()).findByIdForUpdate(any());
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddProductRating_Failure_NotFound() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.addProductRating(productId, 4));
+
+        verify(productRepository, never()).save(any());
     }
 }
