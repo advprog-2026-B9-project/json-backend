@@ -113,4 +113,13 @@ public class ProductController {
         productService.adminDeleteProduct(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PostMapping("/{id}/rating")
+    public ResponseEntity<Void> addProductRating(
+            @PathVariable UUID id,
+            @RequestParam Integer ratingScore) {
+
+        productService.addProductRating(id, ratingScore);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
