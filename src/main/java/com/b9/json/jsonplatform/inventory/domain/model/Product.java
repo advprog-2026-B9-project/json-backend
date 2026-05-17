@@ -77,7 +77,7 @@ public class Product {
     @NotNull(message = "Rata-rata rating tidak boleh null")
     @DecimalMin(value = "0.0", message = "Rata-rata rating minimal adalah 0.0")
     @DecimalMax(value = "5.0", message = "Rata-rata rating maksimal adalah 5.0")
-    @Column(nullable = false, precision = 3, scale = 2, columnDefinition = "numeric(3,2) default 0.0")
+    @Column(nullable = false, columnDefinition = "numeric(3,2) default 0.0")
     @Builder.Default
     private Double averageRating = 0.0;
 }
