@@ -98,4 +98,19 @@ public class ProductController {
         productService.increaseProductStock(id, quantity);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PutMapping("/admin/{id}")
+    public ResponseEntity<Product> adminUpdateProduct(
+            @PathVariable UUID id,
+            @Validated @RequestBody Product updatedData) {
+
+        Product product = productService.adminUpdateProduct(id, updatedData);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<Void> adminDeleteProduct(@PathVariable UUID id) {
+        productService.adminDeleteProduct(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 }
