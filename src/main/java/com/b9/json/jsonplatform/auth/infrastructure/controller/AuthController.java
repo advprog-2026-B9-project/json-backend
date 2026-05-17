@@ -22,9 +22,14 @@ public class AuthController {
     private KycService kycService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
-        User savedUser = authService.registerUser(user);
-        return ResponseEntity.ok(savedUser);
+    public ResponseEntity<?> registerUser(@RequestBody User user) {
+        try {
+            User savedUser = authService.registerUser(user);
+            return ResponseEntity.ok(savedUser);
+        }
+        catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")

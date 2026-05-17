@@ -112,6 +112,18 @@ class AuthServiceImplTest {
         verify(walletService, times(1)).createWallet(any());
     }
 
+    @Test
+    void testRegisterUser_DuplicateEmail_ShouldThrowException() {
+        when(userRepository.findByEmail(sampleUser.getEmail())).thenReturn(sampleUser);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            authService.registerUser(sampleUser);
+        });
+
+        verify(userRepository, never()).save(any());
+        verify(walletService, never()).createWallet(any());
+    }
+
     // ── loginUser ─────────────────────────────────────────────────────────────
 
     @Test
