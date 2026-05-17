@@ -223,4 +223,16 @@ class ProductControllerTest {
 
         verify(productService, times(1)).adminDeleteProduct(productId);
     }
+
+    @Test
+    void addProductRating_Success() throws Exception {
+        doNothing().when(productService).addProductRating(productId, 5);
+
+        mockMvc.perform(post("/api/v1/products/{id}/rating", productId)
+                        .param("ratingScore", "5")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(productService, times(1)).addProductRating(productId, 5);
+    }
 }
