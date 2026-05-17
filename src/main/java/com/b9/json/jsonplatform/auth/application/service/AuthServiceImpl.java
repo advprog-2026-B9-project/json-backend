@@ -118,24 +118,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
-    public User updateJastiperRating(String email, double incomingRating) {
-        User user = userRepository.findByEmail(email);
-        if (user != null && UserRole.JASTIPER.equals(user.getRole())) {
-            int currentReviews = user.getTotalReviews();
-            double currentRating = user.getRating();
-
-            double newRating = ((currentRating * currentReviews) + incomingRating) / (currentReviews + 1);
-
-            user.setRating(Math.round(newRating * 100.0) / 100.0);
-            user.setTotalReviews(currentReviews + 1);
-
-            return userRepository.save(user);
-        }
-        return null;
-    }
-
-    @Override
     public long countSuccessfulTransactions(String email) {
         User user = userRepository.findByEmail(email);
         if (user == null) return 0;
