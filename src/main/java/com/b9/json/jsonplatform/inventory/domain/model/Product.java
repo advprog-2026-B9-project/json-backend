@@ -59,4 +59,13 @@ public class Product {
     private LocalDate arrivalDate;
 
     private String ownerUsername;
+
+    @Column(columnDefinition = "integer default 0")
+    private Integer totalReviews = 0;
+
+    @Column(columnDefinition = "integer default 0")
+    private Integer totalRatingScore = 0;
+
+    @Column(columnDefinition = "numeric(3,2) default 0.0")
+    private Double averageRating = 0.0;
 }
