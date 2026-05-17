@@ -18,4 +18,5 @@ public interface ProductService {
     void increaseProductStock(UUID id, Integer quantity);
     void adminDeleteProduct(UUID id);
     Product adminUpdateProduct(UUID id, Product updatedProduct);
+    void addProductRating(UUID id, Integer ratingScore);
 }

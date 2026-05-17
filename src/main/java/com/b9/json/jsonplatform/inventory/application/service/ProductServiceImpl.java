@@ -2,10 +2,7 @@ package com.b9.json.jsonplatform.inventory.application.service;
 
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.domain.User;
-import com.b9.json.jsonplatform.inventory.application.exception.InsufficientStockException;
-import com.b9.json.jsonplatform.inventory.application.exception.InvalidStockQuantityException;
-import com.b9.json.jsonplatform.inventory.application.exception.ProductNotFoundException;
-import com.b9.json.jsonplatform.inventory.application.exception.ProductOwnershipException;
+import com.b9.json.jsonplatform.inventory.application.exception.*;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
@@ -132,6 +129,25 @@ public class ProductServiceImpl implements ProductService {
         existingProduct.setArrivalDate(updatedProduct.getArrivalDate());
 
         return productRepository.save(existingProduct);
+    }
+
+    @Override
+    @Transactional
+    public void addProductRating(UUID id, Integer ratingScore) {
+        if (ratingScore == null || ratingScore < 1 || ratingScore > 5) {
+            throw new InvalidRatingScoreException("Skor rating harus berada di antara 1 dan 5");
+        }
+
+        Product product = findProductByIdForUpdate(id);
+
+        product.setTotalReviews(product.getTotalReviews() + 1);
+        product.setTotalRatingScore(product.getTotalRatingScore() + ratingScore);
+
+        double newAverage = (double) product.getTotalRatingScore() / product.getTotalReviews();
+        newAverage = Math.round(newAverage * 100.0) / 100.0;
+        product.setAverageRating(newAverage);
+
+        productRepository.save(product);
     }
 
     private void validateOwnership(String productOwner, String requesterUsername) {
