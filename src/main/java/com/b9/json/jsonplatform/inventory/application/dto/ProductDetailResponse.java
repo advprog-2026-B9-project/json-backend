@@ -19,6 +19,8 @@ public class ProductDetailResponse {
     private Integer stock;
     private String originCountry;
     private LocalDate arrivalDate;
+    private Double averageRating;
+    private Integer totalReviews;
 
     private String jastiperUsername;
     private String jastiperFullName;
@@ -32,6 +34,8 @@ public class ProductDetailResponse {
         this.stock = product.getStock();
         this.originCountry = product.getOriginCountry();
         this.arrivalDate = product.getArrivalDate();
+        this.averageRating = product.getAverageRating();
+        this.totalReviews = product.getTotalReviews();
 
         this.jastiperUsername = product.getOwnerUsername();
         this.jastiperFullName = fullName;

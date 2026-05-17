@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.application.service;
 
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.inventory.application.exception.*;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
+    private static final double ROUNDING_FACTOR = 100.0;
 
     private final ProductRepository productRepository;
     private final AuthService authService;
@@ -74,19 +76,19 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProductById(UUID id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produk tidak ditemukan"));
+                .orElseThrow(() -> new ProductNotFoundException("Produk tidak ditemukan"));
     }
 
     @Override
     @Transactional
     public void deductProductStock(UUID id, Integer quantity) {
         if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Jumlah pengurangan stok harus lebih dari 0");
+            throw new InvalidStockQuantityException("Jumlah pengurangan stok harus lebih dari 0");
         }
 
         Product product = findProductByIdForUpdate(id);
         if (product.getStock() < quantity) {
-            throw new IllegalStateException(
+            throw new InsufficientStockException(
                     "Stok tidak mencukupi untuk produk: %s. Sisa stok: %d"
                             .formatted(product.getName(), product.getStock())
             );
@@ -98,9 +100,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void increaseProductStock(UUID id, Integer quantity) throws RuntimeException {
+    public void increaseProductStock(UUID id, Integer quantity) {
         if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Jumlah penambahan stok harus lebih dari 0");
+            throw new InvalidStockQuantityException("Jumlah penambahan stok harus lebih dari 0");
         }
 
         Product product = findProductByIdForUpdate(id);
@@ -108,14 +110,55 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+    @Override
+    @Transactional
+    public void adminDeleteProduct(UUID id) {
+        Product product = findProductByIdForUpdate(id);
+        productRepository.deleteById(product.getId());
+    }
+
+    @Override
+    @Transactional
+    public Product adminUpdateProduct(UUID id, Product updatedProduct) {
+        Product existingProduct = findProductByIdForUpdate(id);
+
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setDescription(updatedProduct.getDescription());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        existingProduct.setStock(updatedProduct.getStock());
+        existingProduct.setOriginCountry(updatedProduct.getOriginCountry());
+        existingProduct.setArrivalDate(updatedProduct.getArrivalDate());
+
+        return productRepository.save(existingProduct);
+    }
+
+    @Override
+    @Transactional
+    public void addProductRating(UUID id, Integer ratingScore) {
+        if (ratingScore == null || ratingScore < 1 || ratingScore > 5) {
+            throw new InvalidRatingScoreException("Skor rating harus berada di antara 1 dan 5");
+        }
+
+        Product product = findProductByIdForUpdate(id);
+
+        product.setTotalReviews(product.getTotalReviews() + 1);
+        product.setTotalRatingScore(product.getTotalRatingScore() + ratingScore);
+
+        double newAverage = (double) product.getTotalRatingScore() / product.getTotalReviews();
+        newAverage = Math.round(newAverage * ROUNDING_FACTOR) / ROUNDING_FACTOR;
+        product.setAverageRating(newAverage);
+
+        productRepository.save(product);
+    }
+
     private void validateOwnership(String productOwner, String requesterUsername) {
         if (!productOwner.equals(requesterUsername)) {
-            throw new SecurityException("Anda tidak berhak memodifikasi produk ini");
+            throw new ProductOwnershipException("Anda tidak berhak memodifikasi produk ini");
         }
     }
 
     private Product findProductByIdForUpdate(UUID id){
         return productRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produk tidak ditemukan"));
+                .orElseThrow(() -> new ProductNotFoundException("Produk tidak ditemukan"));
     }
 }

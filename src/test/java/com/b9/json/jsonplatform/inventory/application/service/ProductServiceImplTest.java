@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.application.service;
 
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.inventory.application.exception.*;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
@@ -95,7 +96,7 @@ class ProductServiceImplTest {
     void testUpdateProduct_Failure_NotOwner() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
 
-        assertThrows(SecurityException.class, () -> productService.updateProduct(productId, sampleProduct, "user2"));
+        assertThrows(ProductOwnershipException.class, () -> productService.updateProduct(productId, sampleProduct, "user2"));
 
         verify(productRepository, never()).save(any(Product.class));
     }
@@ -104,7 +105,7 @@ class ProductServiceImplTest {
     void testUpdateProduct_Failure_NotFound() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> productService.updateProduct(productId, sampleProduct, owner));
+        assertThrows(ProductNotFoundException.class, () -> productService.updateProduct(productId, sampleProduct, owner));
 
         verify(productRepository, never()).save(any(Product.class));
     }
@@ -123,7 +124,7 @@ class ProductServiceImplTest {
     void testDeleteProduct_Failure_NotFound() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> productService.deleteProduct(productId, owner));
+        Exception exception = assertThrows(ProductNotFoundException.class, () -> productService.deleteProduct(productId, owner));
 
         assertTrue(exception.getMessage().contains("tidak ditemukan"));
         verify(productRepository, never()).deleteById(any());
@@ -133,7 +134,7 @@ class ProductServiceImplTest {
     void testDeleteProduct_Failure_NotOwner() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
 
-        assertThrows(SecurityException.class, () -> productService.deleteProduct(productId, "user2"));
+        assertThrows(ProductOwnershipException.class, () -> productService.deleteProduct(productId, "user2"));
 
         verify(productRepository, never()).deleteById(productId);
     }
@@ -203,7 +204,7 @@ class ProductServiceImplTest {
     void testGetProductById_Failure_NotFound() {
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> productService.getProductById(productId));
+        assertThrows(ProductNotFoundException.class, () -> productService.getProductById(productId));
 
         verify(productRepository, times(1)).findById(productId);
     }
@@ -221,9 +222,9 @@ class ProductServiceImplTest {
 
     @Test
     void testDeductProductStock_Failure_InvalidQuantity() {
-        assertThrows(IllegalArgumentException.class, () -> productService.deductProductStock(productId, 0));
-        assertThrows(IllegalArgumentException.class, () -> productService.deductProductStock(productId, -5));
-        assertThrows(IllegalArgumentException.class, () -> productService.deductProductStock(productId, null));
+        assertThrows(InvalidStockQuantityException.class, () -> productService.deductProductStock(productId, 0));
+        assertThrows(InvalidStockQuantityException.class, () -> productService.deductProductStock(productId, -5));
+        assertThrows(InvalidStockQuantityException.class, () -> productService.deductProductStock(productId, null));
 
         verify(productRepository, never()).findByIdForUpdate(any());
         verify(productRepository, never()).save(any());
@@ -233,7 +234,7 @@ class ProductServiceImplTest {
     void testDeductProductStock_Failure_NotFound() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> productService.deductProductStock(productId, 2));
+        assertThrows(ProductNotFoundException.class, () -> productService.deductProductStock(productId, 2));
 
         verify(productRepository, never()).save(any());
     }
@@ -242,7 +243,7 @@ class ProductServiceImplTest {
     void testDeductProductStock_Failure_InsufficientStock() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
 
-        assertThrows(IllegalStateException.class, () -> productService.deductProductStock(productId, 10));
+        assertThrows(InsufficientStockException.class, () -> productService.deductProductStock(productId, 10));
 
         verify(productRepository, never()).save(any());
     }
@@ -260,9 +261,9 @@ class ProductServiceImplTest {
 
     @Test
     void testIncreaseProductStock_Failure_InvalidQuantity() {
-        assertThrows(IllegalArgumentException.class, () -> productService.increaseProductStock(productId, 0));
-        assertThrows(IllegalArgumentException.class, () -> productService.increaseProductStock(productId, -2));
-        assertThrows(IllegalArgumentException.class, () -> productService.increaseProductStock(productId, null));
+        assertThrows(InvalidStockQuantityException.class, () -> productService.increaseProductStock(productId, 0));
+        assertThrows(InvalidStockQuantityException.class, () -> productService.increaseProductStock(productId, -2));
+        assertThrows(InvalidStockQuantityException.class, () -> productService.increaseProductStock(productId, null));
 
         verify(productRepository, never()).findByIdForUpdate(any());
         verify(productRepository, never()).save(any());
@@ -272,7 +273,90 @@ class ProductServiceImplTest {
     void testIncreaseProductStock_Failure_NotFound() {
         when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> productService.increaseProductStock(productId, 2));
+        assertThrows(ProductNotFoundException.class, () -> productService.increaseProductStock(productId, 2));
+
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void testAdminDeleteProduct_Success() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+        doNothing().when(productRepository).deleteById(productId);
+
+        assertDoesNotThrow(() -> productService.adminDeleteProduct(productId));
+
+        verify(productRepository, times(1)).findByIdForUpdate(productId);
+        verify(productRepository, times(1)).deleteById(productId);
+    }
+
+    @Test
+    void testAdminDeleteProduct_NotFound() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.adminDeleteProduct(productId));
+
+        verify(productRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testAdminUpdateProduct_Success() {
+        Product updatedInfo = Product.builder()
+                .name("Product yang akan di-takedown")
+                .price(new BigDecimal("0"))
+                .stock(0)
+                .build();
+
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+        when(productRepository.save(any(Product.class))).thenReturn(sampleProduct);
+
+        Product result = productService.adminUpdateProduct(productId, updatedInfo);
+
+        assertEquals("Product yang akan di-takedown", result.getName());
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    @Test
+    void testAdminUpdateProduct_NotFound() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.adminUpdateProduct(productId, sampleProduct));
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void testAddProductRating_Success() {
+        sampleProduct.setTotalReviews(1);
+        sampleProduct.setTotalRatingScore(4);
+        sampleProduct.setAverageRating(4.0);
+
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+        when(productRepository.save(any(Product.class))).thenReturn(sampleProduct);
+
+        assertDoesNotThrow(() -> productService.addProductRating(productId, 5));
+
+        assertEquals(2, sampleProduct.getTotalReviews());
+        assertEquals(9, sampleProduct.getTotalRatingScore());
+        assertEquals(4.5, sampleProduct.getAverageRating());
+
+        verify(productRepository, times(1)).save(sampleProduct);
+    }
+
+    @Test
+    void testAddProductRating_Failure_InvalidScore() {
+        assertThrows(InvalidRatingScoreException.class, () -> productService.addProductRating(productId, 0));
+        assertThrows(InvalidRatingScoreException.class, () -> productService.addProductRating(productId, 6));
+        assertThrows(InvalidRatingScoreException.class, () -> productService.addProductRating(productId, null));
+
+        verify(productRepository, never()).findByIdForUpdate(any());
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddProductRating_Failure_NotFound() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.addProductRating(productId, 4));
 
         verify(productRepository, never()).save(any());
     }

@@ -48,10 +48,4 @@ public class User {
 
     @Column(nullable = false)
     private boolean isBanned = false;
-
-    @Column(nullable = false)
-    private Double rating = 0.0;
-
-    @Column(nullable = false)
-    private Integer totalReviews = 0;
 }
