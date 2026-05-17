@@ -2,6 +2,10 @@ package com.b9.json.jsonplatform.inventory.application.service;
 
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.inventory.application.exception.InsufficientStockException;
+import com.b9.json.jsonplatform.inventory.application.exception.InvalidStockQuantityException;
+import com.b9.json.jsonplatform.inventory.application.exception.ProductNotFoundException;
+import com.b9.json.jsonplatform.inventory.application.exception.ProductOwnershipException;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.inventory.domain.repository.ProductRepository;
 import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
@@ -74,19 +78,19 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProductById(UUID id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produk tidak ditemukan"));
+                .orElseThrow(() -> new ProductNotFoundException("Produk tidak ditemukan"));
     }
 
     @Override
     @Transactional
     public void deductProductStock(UUID id, Integer quantity) {
         if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Jumlah pengurangan stok harus lebih dari 0");
+            throw new InvalidStockQuantityException("Jumlah pengurangan stok harus lebih dari 0");
         }
 
         Product product = findProductByIdForUpdate(id);
         if (product.getStock() < quantity) {
-            throw new IllegalStateException(
+            throw new InsufficientStockException(
                     "Stok tidak mencukupi untuk produk: %s. Sisa stok: %d"
                             .formatted(product.getName(), product.getStock())
             );
@@ -100,7 +104,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void increaseProductStock(UUID id, Integer quantity) throws RuntimeException {
         if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Jumlah penambahan stok harus lebih dari 0");
+            throw new InvalidStockQuantityException("Jumlah penambahan stok harus lebih dari 0");
         }
 
         Product product = findProductByIdForUpdate(id);
@@ -110,12 +114,12 @@ public class ProductServiceImpl implements ProductService {
 
     private void validateOwnership(String productOwner, String requesterUsername) {
         if (!productOwner.equals(requesterUsername)) {
-            throw new SecurityException("Anda tidak berhak memodifikasi produk ini");
+            throw new ProductOwnershipException("Anda tidak berhak memodifikasi produk ini");
         }
     }
 
     private Product findProductByIdForUpdate(UUID id){
         return productRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produk tidak ditemukan"));
+                .orElseThrow(() -> new ProductNotFoundException("Produk tidak ditemukan"));
     }
 }
