@@ -16,4 +16,7 @@ public interface ProductService {
     Product getProductById(UUID id);
     void deductProductStock(UUID id, Integer quantity);
     void increaseProductStock(UUID id, Integer quantity);
+    void adminDeleteProduct(UUID id);
+    Product adminUpdateProduct(UUID id, Product updatedProduct);
+    void addProductRating(UUID id, Integer ratingScore);
 }
