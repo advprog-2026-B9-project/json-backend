@@ -280,4 +280,50 @@ class ProductServiceImplTest {
 
         verify(productRepository, never()).save(any());
     }
+
+    @Test
+    void testForceDeleteProductByAdmin_Success() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+        doNothing().when(productRepository).deleteById(productId);
+
+        assertDoesNotThrow(() -> productService.adminDeleteProduct(productId));
+
+        verify(productRepository, times(1)).findByIdForUpdate(productId);
+        verify(productRepository, times(1)).deleteById(productId);
+    }
+
+    @Test
+    void testForceDeleteProductByAdmin_NotFound() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.adminDeleteProduct(productId));
+
+        verify(productRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testForceUpdateProductByAdmin_Success() {
+        Product updatedInfo = Product.builder()
+                .name("Product yang akan di-takedown")
+                .price(new BigDecimal("0"))
+                .stock(0)
+                .build();
+
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(sampleProduct));
+        when(productRepository.save(any(Product.class))).thenReturn(sampleProduct);
+
+        Product result = productService.adminUpdateProduct(productId, updatedInfo);
+
+        assertEquals("Produk Take-Down Admin", result.getName());
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    @Test
+    void testForceUpdateProductByAdmin_NotFound() {
+        when(productRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.adminUpdateProduct(productId, sampleProduct));
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
 }
