@@ -1,0 +1,35 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram - API Application (Backend Spring Boot)
+
+' Batasan dari luar
+Container(frontend, "Web Application", "Next.js", "Antarmuka pengguna untuk Titipers, Jastiper, Admin.")
+System_Ext(supabase, "Database", "Supabase", "Penyimpanan data utama.")
+
+Container_Boundary(backend_api, "API Application") {
+    
+    Component(auth_module, "Auth & Profile Component", "Spring Controller & Service", "Mengelola registrasi, login, KYC, dan profil pengguna.")
+    Component(inventory_module, "Inventory & Catalog Component", "Spring Controller & Service", "Mengelola entri barang, pencarian, dan penguncian stok saat war.")
+    Component(order_module, "Order Component", "Spring Controller & Service", "War Engine pengelola siklus transaksi dan manajemen pesanan.")
+    Component(wallet_module, "Wallet & Transaction Component", "Spring Controller & Service", "Pusat pengelolaan keuangan digital, mutasi, dan deduksi saldo.")
+    
+    ' Relasi antar komponen internal (Dependency)
+    Rel(order_module, inventory_module, "Meminta verifikasi dan penguncian stok (Reserve Stock)")
+    Rel(order_module, wallet_module, "Meminta verifikasi dan pemotongan/refund saldo")
+    Rel(order_module, auth_module, "Mengirim data rating untuk update reputasi Jastiper")
+}
+
+' Relasi dari Frontend ke Komponen
+Rel(frontend, auth_module, "Request autentikasi & profil", "JSON/HTTPS")
+Rel(frontend, inventory_module, "Pencarian barang & katalog", "JSON/HTTPS")
+Rel(frontend, order_module, "Request checkout & status pesanan", "JSON/HTTPS")
+Rel(frontend, wallet_module, "Request top-up & withdraw", "JSON/HTTPS")
+
+' Relasi dari Komponen ke Database
+Rel(auth_module, supabase, "Read/Write User Data", "JDBC")
+Rel(inventory_module, supabase, "Read/Write Item Data", "JDBC")
+Rel(order_module, supabase, "Read/Write Order Data", "JDBC")
+Rel(wallet_module, supabase, "Read/Write Wallet Data", "JDBC")
+
+@enduml
