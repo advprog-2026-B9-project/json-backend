@@ -6,6 +6,7 @@ import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
+import com.b9.json.jsonplatform.wallet.application.TransactionService;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
 
@@ -22,12 +23,12 @@ import java.util.UUID;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final WalletService walletService;
-    private final TransactionServiceImpl transactionService;
+    private final TransactionService transactionService;
     private final ProductService productService; 
 
     public OrderService(OrderRepository orderRepository,
                         WalletService walletService,
-                        TransactionServiceImpl transactionService,
+                        TransactionService transactionService,
                         ProductService productService) { 
         this.orderRepository = orderRepository;
         this.walletService = walletService;
@@ -39,6 +40,10 @@ public class OrderService {
     public Order createOrder(Order order) {
         if (order.getQuantity() == null || order.getQuantity() <= 0) {
             throw new IllegalArgumentException("Jumlah barang harus lebih dari 0");
+        }
+
+        if (order.getShippingAddress() != null && order.getShippingAddress().matches(".*[<>{}\\$].*")) {
+            throw new IllegalArgumentException("Alamat pengiriman mengandung karakter tidak valid");
         }
 
         Product product = productService.getProductById(order.getProductId());
@@ -136,5 +141,32 @@ public class OrderService {
 
     public List<Order> getOrdersByJastiper(UUID jastiperId) {
         return orderRepository.findByJastiperId(jastiperId);
+    }
+
+    @Transactional
+    public Order giveRating(UUID orderId, Integer jastiperRating, Integer productRating) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order tidak ditemukan"));
+
+        if (!"COMPLETED".equals(order.getStatus())) {
+            throw new IllegalStateException("Hanya pesanan berstatus COMPLETED yang bisa diberi rating");
+        }
+
+        if (jastiperRating == null || jastiperRating < 1 || jastiperRating > 5) {
+            throw new IllegalArgumentException("Rating Jastiper harus di antara 1 dan 5");
+        }
+        
+        if (productRating == null || productRating < 1 || productRating > 5) {
+            throw new IllegalArgumentException("Rating Produk harus di antara 1 dan 5");
+        }
+
+        order.setJastiperRating(jastiperRating);
+        order.setProductRating(productRating);
+
+        return orderRepository.save(order);
+    }
+
+    public List<Order> getAllOrdersForAdmin() {
+        return orderRepository.findAll();
     }
 }
