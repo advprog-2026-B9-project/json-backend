@@ -14,7 +14,6 @@ public class Order {
     @Id
     @GeneratedValue
     private UUID id;
-
     private UUID titiperId;
     private UUID jastiperId;
 

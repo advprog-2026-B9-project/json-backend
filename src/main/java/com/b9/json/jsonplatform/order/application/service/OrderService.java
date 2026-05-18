@@ -3,6 +3,7 @@ package com.b9.json.jsonplatform.order.application.service;
 import com.b9.json.jsonplatform.order.domain.Order;
 import com.b9.json.jsonplatform.order.infrastructure.repository.OrderRepository;
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
@@ -25,17 +26,19 @@ public class OrderService {
     private final WalletService walletService;
     private final TransactionService transactionService;
     private final ProductService productService; 
-
+    private final AuthService authService;
+    
     public OrderService(OrderRepository orderRepository,
                         WalletService walletService,
                         TransactionService transactionService,
-                        ProductService productService) { 
+                        ProductService productService,
+                        AuthService authService) { 
         this.orderRepository = orderRepository;
         this.walletService = walletService;
         this.transactionService = transactionService;
         this.productService = productService;
+        this.authService = authService;
     }
-
     @Transactional
     public Order createOrder(Order order) {
         if (order.getQuantity() == null || order.getQuantity() <= 0) {
@@ -162,8 +165,17 @@ public class OrderService {
 
         order.setJastiperRating(jastiperRating);
         order.setProductRating(productRating);
+        orderRepository.save(order);
 
-        return orderRepository.save(order);
+        productService.addProductRating(order.getProductId(), productRating);
+        String jastiperEmail = authService.findAllUsers().stream()
+                .filter(user -> user.getId().equals(order.getJastiperId()))
+                .map(user -> user.getEmail())
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Data Jastiper tidak ditemukan di sistem"));
+        
+authService.addRating(jastiperEmail, jastiperRating);
+        return order;
     }
 
     public List<Order> getAllOrdersForAdmin() {
