@@ -25,6 +25,7 @@ public class SecurityConfig {
                         .requestMatchers("/wallets/**").permitAll()
                         .requestMatchers("/transactions/**").permitAll()
                         .requestMatchers("/api/orders/**", "/api/orders/checkout").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 );
 
