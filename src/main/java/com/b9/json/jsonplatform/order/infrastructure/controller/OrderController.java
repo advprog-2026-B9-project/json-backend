@@ -40,4 +40,22 @@ public class OrderController {
         List<Order> orders = orderService.getOrdersByJastiper(jastiperId);
         return ResponseEntity.ok(orders);
     }
+
+    @PostMapping("/{orderId}/rate")
+    public ResponseEntity<?> rateOrder(@PathVariable UUID orderId, 
+                                       @RequestParam Integer jastiperRating, 
+                                       @RequestParam Integer productRating) {
+        try {
+            Order updatedOrder = orderService.giveRating(orderId, jastiperRating, productRating);
+            return ResponseEntity.ok(updatedOrder);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<Order>> getAllOrdersAdmin() {
+        List<Order> orders = orderService.getAllOrdersForAdmin();
+        return ResponseEntity.ok(orders);
+    }
 }
