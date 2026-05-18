@@ -138,4 +138,26 @@ public class AuthServiceImpl implements AuthService {
                         && TransactionType.PAYMENT.equals(t.getType()))
                 .count();
     }
+
+    @Override
+    @Transactional
+    public User addRating(String email, int ratingScore) {
+        if (ratingScore < 1 || ratingScore > 5) {
+            throw new IllegalArgumentException("Rating harus antara 1 dan 5");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("User tidak ditemukan");
+        }
+
+        int currentReviews = user.getTotalReviews();
+        double currentRating = user.getRating();
+        double newRating = ((currentRating * currentReviews) + ratingScore) / (currentReviews + 1);
+
+        user.setRating(Math.round(newRating * 100.0) / 100.0);
+        user.setTotalReviews(currentReviews + 1);
+
+        return userRepository.save(user);
+    }
 }
