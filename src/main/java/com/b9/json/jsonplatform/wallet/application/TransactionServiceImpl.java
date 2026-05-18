@@ -1,5 +1,6 @@
 package com.b9.json.jsonplatform.wallet.application;
 
+import com.b9.json.jsonplatform.wallet.application.handler.TransactionHandler;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.TransactionStatus;
 import com.b9.json.jsonplatform.wallet.domain.TransactionType;
@@ -8,17 +9,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final WalletService walletService;
+    private final Map<TransactionType, TransactionHandler> handlerMap;
 
-    public TransactionServiceImpl(TransactionRepository transactionRepository, WalletService walletService) {
+    public TransactionServiceImpl(TransactionRepository transactionRepository, List<TransactionHandler> handlers) {
         this.transactionRepository = transactionRepository;
-        this.walletService = walletService;
+        this.handlerMap = handlers.stream().collect(
+                Collectors.toMap(TransactionHandler::supportedType, Function.identity())
+        );
     }
 
     @Override
@@ -65,31 +71,7 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalStateException("Only PENDING transaction can be updated");
         }
 
-        if (transaction.getType() == TransactionType.TOP_UP) {
-            walletService.increaseBalance(transaction.getWalletId(), transaction.getAmount());
-        }
-
-        if (transaction.getType() == TransactionType.WITHDRAWAL) {
-            walletService.decreaseBalance(transaction.getWalletId(), transaction.getAmount());
-        }
-
-        if (transaction.getType() == TransactionType.PAYMENT) {
-            if (transaction.getTargetWalletId() == null) {
-                throw new IllegalStateException("Target wallet is required for PAYMENT");
-            }
-
-            walletService.decreaseBalance(transaction.getWalletId(), transaction.getAmount());
-            walletService.increaseBalance(transaction.getTargetWalletId(), transaction.getAmount());
-        }
-
-        if (transaction.getType() == TransactionType.REFUND) {
-            if (transaction.getTargetWalletId() == null) {
-                throw new IllegalStateException("Target wallet is required for REFUND");
-            }
-
-            walletService.increaseBalance(transaction.getWalletId(), transaction.getAmount());
-            walletService.decreaseBalance(transaction.getTargetWalletId(), transaction.getAmount());
-        }
+        handlerMap.get(transaction.getType()).execute(transaction);
 
         transaction.setStatus(TransactionStatus.SUCCESS);
 

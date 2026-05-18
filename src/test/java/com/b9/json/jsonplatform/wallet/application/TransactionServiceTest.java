@@ -1,5 +1,9 @@
 package com.b9.json.jsonplatform.wallet.application;
 
+import com.b9.json.jsonplatform.wallet.application.handler.PaymentHandler;
+import com.b9.json.jsonplatform.wallet.application.handler.RefundHandler;
+import com.b9.json.jsonplatform.wallet.application.handler.TopUpHandler;
+import com.b9.json.jsonplatform.wallet.application.handler.WithdrawalHandler;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.TransactionStatus;
 import com.b9.json.jsonplatform.wallet.domain.TransactionType;
@@ -7,7 +11,6 @@ import com.b9.json.jsonplatform.wallet.domain.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -28,7 +31,6 @@ class TransactionServiceTest {
     @Mock
     private WalletService walletService;
 
-    @InjectMocks
     private TransactionServiceImpl transactionService;
 
     private UUID walletId;
@@ -49,6 +51,16 @@ class TransactionServiceTest {
         );
         transaction.setId(transactionId);
         transaction.setStatus(TransactionStatus.PENDING);
+
+        transactionService = new TransactionServiceImpl(
+                transactionRepository,
+                List.of(
+                        new TopUpHandler(walletService),
+                        new WithdrawalHandler(walletService),
+                        new PaymentHandler(walletService),
+                        new RefundHandler(walletService)
+                )
+        );
     }
 
     @Test
