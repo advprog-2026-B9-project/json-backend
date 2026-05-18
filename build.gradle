@@ -93,6 +93,20 @@ jacocoTestCoverageVerification {
                 minimum = 0.3
             }
         }
+        rule {
+            element = 'CLASS'
+            includes = ['com.b9.json.jsonplatform.wallet.**']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 1.00
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 1.00
+            }
+        }
     }
 }
 
