@@ -366,4 +366,63 @@ class TransactionServiceTest {
 
         verify(transactionRepository, times(1)).save(any());
     }
+
+    @Test
+    void testMarkSuccess_Refund_TargetWalletMissing() {
+        Transaction refund = new Transaction(
+                walletId,
+                TransactionType.REFUND,
+                new BigDecimal("25"),
+                "Refund"
+        );
+        refund.setId(transactionId);
+        refund.setStatus(TransactionStatus.PENDING);
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(refund));
+
+        assertThrows(IllegalStateException.class,
+                () -> transactionService.markSuccess(transactionId));
+
+        verify(walletService, never()).increaseBalance(any(), any());
+        verify(walletService, never()).decreaseBalance(any(), any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void testMarkFailed_AlreadySuccess() {
+        transaction.setStatus(TransactionStatus.SUCCESS);
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+
+        assertThrows(IllegalStateException.class,
+                () -> transactionService.markFailed(transactionId));
+
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateTransaction_smallestPositiveAmount_succeeds() {
+        when(transactionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BigDecimal smallest = new BigDecimal("0.01");
+        Transaction result = transactionService.createTransaction(
+                walletId, TransactionType.TOP_UP, smallest, "Top Up");
+
+        assertNotNull(result);
+        assertEquals(smallest, result.getAmount());
+        verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testCreateTransaction_veryLargeAmount_succeeds() {
+        when(transactionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BigDecimal large = new BigDecimal("999999999.99");
+        Transaction result = transactionService.createTransaction(
+                walletId, TransactionType.PAYMENT, large, "Payment");
+
+        assertNotNull(result);
+        assertEquals(large, result.getAmount());
+        verify(transactionRepository, times(1)).save(any());
+    }
 }
