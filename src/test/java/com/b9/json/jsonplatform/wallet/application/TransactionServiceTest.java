@@ -109,7 +109,7 @@ class TransactionServiceTest {
     }
 
     @Test
-    void testMarkSuccess_TopUp() {
+    void testMarkSuccess_dispatchesToHandlerAndMarksSuccess() {
         when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
         when(transactionRepository.save(any())).thenReturn(transaction);
 
@@ -118,94 +118,6 @@ class TransactionServiceTest {
         assertEquals(TransactionStatus.SUCCESS, result.getStatus());
         verify(walletService, times(1)).increaseBalance(walletId, new BigDecimal("100"));
         verify(transactionRepository, times(1)).save(any());
-    }
-
-    @Test
-    void testMarkSuccess_Withdrawal() {
-        Transaction withdrawal = new Transaction(
-                walletId,
-                TransactionType.WITHDRAWAL,
-                new BigDecimal("50"),
-                "Withdrawal"
-        );
-        withdrawal.setId(transactionId);
-        withdrawal.setStatus(TransactionStatus.PENDING);
-
-        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(withdrawal));
-        when(transactionRepository.save(any())).thenReturn(withdrawal);
-
-        Transaction result = transactionService.markSuccess(transactionId);
-
-        assertEquals(TransactionStatus.SUCCESS, result.getStatus());
-        verify(walletService, times(1)).decreaseBalance(walletId, new BigDecimal("50"));
-        verify(transactionRepository, times(1)).save(any());
-    }
-
-    @Test
-    void testMarkSuccess_Payment() {
-        Transaction payment = new Transaction(
-                walletId,
-                targetWalletId,
-                TransactionType.PAYMENT,
-                new BigDecimal("75"),
-                "Payment"
-        );
-        payment.setId(transactionId);
-        payment.setStatus(TransactionStatus.PENDING);
-
-        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(payment));
-        when(transactionRepository.save(any())).thenReturn(payment);
-
-        Transaction result = transactionService.markSuccess(transactionId);
-
-        assertEquals(TransactionStatus.SUCCESS, result.getStatus());
-        verify(walletService, times(1)).decreaseBalance(walletId, new BigDecimal("75"));
-        verify(walletService, times(1)).increaseBalance(targetWalletId, new BigDecimal("75"));
-        verify(transactionRepository, times(1)).save(any());
-    }
-
-    @Test
-    void testMarkSuccess_Refund() {
-        Transaction refund = new Transaction(
-                walletId,
-                targetWalletId,
-                TransactionType.REFUND,
-                new BigDecimal("30"),
-                "Refund"
-        );
-        refund.setId(transactionId);
-        refund.setStatus(TransactionStatus.PENDING);
-
-        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(refund));
-        when(transactionRepository.save(any())).thenReturn(refund);
-
-        Transaction result = transactionService.markSuccess(transactionId);
-
-        assertEquals(TransactionStatus.SUCCESS, result.getStatus());
-        verify(walletService, times(1)).increaseBalance(walletId, new BigDecimal("30"));
-        verify(walletService, times(1)).decreaseBalance(targetWalletId, new BigDecimal("30"));
-        verify(transactionRepository, times(1)).save(any());
-    }
-
-    @Test
-    void testMarkSuccess_Payment_TargetWalletMissing() {
-        Transaction payment = new Transaction(
-                walletId,
-                TransactionType.PAYMENT,
-                new BigDecimal("25"),
-                "Payment"
-        );
-        payment.setId(transactionId);
-        payment.setStatus(TransactionStatus.PENDING);
-
-        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(payment));
-
-        assertThrows(IllegalStateException.class,
-                () -> transactionService.markSuccess(transactionId));
-
-        verify(walletService, never()).increaseBalance(any(), any());
-        verify(walletService, never()).decreaseBalance(any(), any());
-        verify(transactionRepository, never()).save(any());
     }
 
     @Test
@@ -377,27 +289,6 @@ class TransactionServiceTest {
         assertEquals(targetWalletId, result.getTargetWalletId());
 
         verify(transactionRepository, times(1)).save(any());
-    }
-
-    @Test
-    void testMarkSuccess_Refund_TargetWalletMissing() {
-        Transaction refund = new Transaction(
-                walletId,
-                TransactionType.REFUND,
-                new BigDecimal("25"),
-                "Refund"
-        );
-        refund.setId(transactionId);
-        refund.setStatus(TransactionStatus.PENDING);
-
-        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(refund));
-
-        assertThrows(IllegalStateException.class,
-                () -> transactionService.markSuccess(transactionId));
-
-        verify(walletService, never()).increaseBalance(any(), any());
-        verify(walletService, never()).decreaseBalance(any(), any());
-        verify(transactionRepository, never()).save(any());
     }
 
     @Test
