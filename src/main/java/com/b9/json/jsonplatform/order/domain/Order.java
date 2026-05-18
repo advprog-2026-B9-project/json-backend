@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @Getter @Setter
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
     private UUID id;
 
     private UUID titiperId;
@@ -29,8 +29,14 @@ public class Order {
     @Column(name = "tracking_number")
     private String trackingNumber;
 
-    private LocalDateTime createdAt;
+    @Column(name = "jastiper_rating")
+    private Integer jastiperRating;
 
+    @Column(name = "product_rating")
+    private Integer productRating;
+
+    private LocalDateTime createdAt;
+    
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
