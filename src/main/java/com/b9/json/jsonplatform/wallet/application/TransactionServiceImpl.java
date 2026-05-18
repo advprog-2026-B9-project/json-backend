@@ -4,7 +4,6 @@ import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.TransactionStatus;
 import com.b9.json.jsonplatform.wallet.domain.TransactionType;
 import com.b9.json.jsonplatform.wallet.domain.TransactionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -13,10 +12,14 @@ import java.util.UUID;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
-    @Autowired
-    private TransactionRepository transactionRepository;
-    @Autowired
-    private WalletService walletService;
+
+    private final TransactionRepository transactionRepository;
+    private final WalletService walletService;
+
+    public TransactionServiceImpl(TransactionRepository transactionRepository, WalletService walletService) {
+        this.transactionRepository = transactionRepository;
+        this.walletService = walletService;
+    }
 
     @Override
     public Transaction createTransaction(
