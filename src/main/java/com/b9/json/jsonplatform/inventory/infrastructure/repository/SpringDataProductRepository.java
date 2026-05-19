@@ -15,8 +15,8 @@ public interface SpringDataProductRepository extends JpaRepository<Product, UUID
     List<Product> findByOwnerUsername(String ownerUsername);
 
     @Query("SELECT p FROM Product p WHERE " +
-            "(:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-            "(:jastiper IS NULL OR p.ownerUsername = :jastiper)")
+            "(CAST(:name AS string) IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%'))) AND " +
+            "(CAST(:jastiper AS string) IS NULL OR p.ownerUsername = CAST(:jastiper AS string))")
     List<Product> searchProducts(@Param("name") String name, @Param("jastiper") String jastiper);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
