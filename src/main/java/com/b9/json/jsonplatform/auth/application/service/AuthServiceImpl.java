@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -85,6 +86,12 @@ public class AuthServiceImpl implements AuthService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    @Override
+    public User findById(UUID id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
 
     @Override
     public List<User> findAllUsers() {
