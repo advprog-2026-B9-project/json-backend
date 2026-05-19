@@ -92,7 +92,6 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.findById(id).orElse(null);
     }
 
-
     @Override
     public List<User> findAllUsers() {
         return userRepository.findAll();
