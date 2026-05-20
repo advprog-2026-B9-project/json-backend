@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.auth.application.service;
 
 import com.b9.json.jsonplatform.auth.domain.User;
 import java.util.List;
+import java.util.UUID;
 
 public interface AuthService {
     User registerUser(User user);
@@ -9,6 +10,7 @@ public interface AuthService {
     User updateProfile(String email, User updatedUser);
     User findByEmail(String email);
     User findByUsername(String username);
+    User findById(UUID id);
     List<User> findAllUsers();
     User demoteJastiper(String email);
     User banUser(String email);

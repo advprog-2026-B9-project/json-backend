@@ -84,8 +84,8 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new IllegalStateException("Target wallet is required for REFUND");
             }
 
-            walletService.increaseBalance(transaction.getWalletId(), transaction.getAmount());
-            walletService.decreaseBalance(transaction.getTargetWalletId(), transaction.getAmount());
+            walletService.decreaseBalance(transaction.getWalletId(), transaction.getAmount());
+            walletService.increaseBalance(transaction.getTargetWalletId(), transaction.getAmount());
         }
 
         transaction.setStatus(TransactionStatus.SUCCESS);

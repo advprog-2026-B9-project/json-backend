@@ -10,12 +10,10 @@ import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
 import com.b9.json.jsonplatform.wallet.application.TransactionService;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
+import com.b9.json.jsonplatform.auth.domain.User;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,20 +23,21 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final WalletService walletService;
     private final TransactionService transactionService;
-    private final ProductService productService; 
+    private final ProductService productService;
     private final AuthService authService;
-    
+
     public OrderService(OrderRepository orderRepository,
                         WalletService walletService,
-                        TransactionService transactionService,
+                        TransactionServiceImpl transactionService,
                         ProductService productService,
-                        AuthService authService) { 
+                        AuthService authService) {
         this.orderRepository = orderRepository;
         this.walletService = walletService;
         this.transactionService = transactionService;
         this.productService = productService;
         this.authService = authService;
     }
+
     @Transactional
     public Order createOrder(Order order) {
         if (order.getQuantity() == null || order.getQuantity() <= 0) {
@@ -64,7 +63,7 @@ public class OrderService {
                 order.getTotalPrice()
         );
         transactionService.markSuccess(payment.getId());
-        
+
         productService.deductProductStock(order.getProductId(), order.getQuantity());
 
         order.setStatus("PAID");
@@ -82,11 +81,11 @@ public class OrderService {
     public Order updateStatusToPurchased(UUID orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order tidak ditemukan"));
-        
+
         if (!"PAID".equals(order.getStatus())) {
             throw new IllegalStateException("Hanya pesanan berstatus PAID yang bisa diproses");
         }
-        
+
         order.setStatus("PURCHASED");
         return orderRepository.save(order);
     }
@@ -94,11 +93,11 @@ public class OrderService {
     public Order updateStatusToShipped(UUID orderId, String trackingNumber) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order tidak ditemukan"));
-        
+
         if (!"PURCHASED".equals(order.getStatus())) {
             throw new IllegalStateException("Pesanan harus berstatus PURCHASED sebelum dikirim");
         }
-        
+
         order.setStatus("SHIPPED");
         order.setTrackingNumber(trackingNumber);
         return orderRepository.save(order);
@@ -107,11 +106,11 @@ public class OrderService {
     public Order updateStatusToCompleted(UUID orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order tidak ditemukan"));
-        
+
         if (!"SHIPPED".equals(order.getStatus())) {
             throw new IllegalStateException("Pesanan belum dikirim, tidak bisa diselesaikan");
         }
-        
+
         order.setStatus("COMPLETED");
         return orderRepository.save(order);
     }
@@ -130,8 +129,8 @@ public class OrderService {
         Wallet sellerWallet = walletService.getWalletByUserId(order.getJastiperId());
 
         Transaction refundTx = transactionService.createRefund(
-                sellerWallet.getId(), 
-                buyerWallet.getId(), 
+                sellerWallet.getId(),
+                buyerWallet.getId(),
                 order.getTotalPrice()
         );
         transactionService.markSuccess(refundTx.getId());
@@ -158,24 +157,24 @@ public class OrderService {
         if (jastiperRating == null || jastiperRating < 1 || jastiperRating > 5) {
             throw new IllegalArgumentException("Rating Jastiper harus di antara 1 dan 5");
         }
-        
+
         if (productRating == null || productRating < 1 || productRating > 5) {
             throw new IllegalArgumentException("Rating Produk harus di antara 1 dan 5");
         }
 
         order.setJastiperRating(jastiperRating);
         order.setProductRating(productRating);
-        orderRepository.save(order);
 
         productService.addProductRating(order.getProductId(), productRating);
+
         String jastiperEmail = authService.findAllUsers().stream()
                 .filter(user -> user.getId().equals(order.getJastiperId()))
-                .map(user -> user.getEmail())
+                .map(User::getEmail)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Data Jastiper tidak ditemukan di sistem"));
-        
-authService.addRating(jastiperEmail, jastiperRating);
-        return order;
+
+        authService.addRating(jastiperEmail, jastiperRating);
+        return orderRepository.save(order);
     }
 
     public List<Order> getAllOrdersForAdmin() {

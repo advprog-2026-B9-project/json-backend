@@ -276,4 +276,56 @@ class OrderServiceTest {
         verify(productService, never()).increaseProductStock(any(), any());
         verify(orderRepository, never()).save(any(Order.class)); 
     }
+
+    @Test
+    void giveRating_Success() {
+        UUID orderId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setId(orderId);
+        order.setJastiperId(jastiperId);
+        order.setProductId(productId);
+        order.setStatus("COMPLETED");
+        
+        Integer jastiperRating = 5;
+        Integer productRating = 4;
+        String expectedEmail = "jastiper.bagoes@gmail.com";
+
+        User mockJastiper = new User();
+        mockJastiper.setId(jastiperId); 
+        mockJastiper.setEmail(expectedEmail);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(authService.findAllUsers()).thenReturn(List.of(mockJastiper));
+
+        Order result = orderService.giveRating(orderId, jastiperRating, productRating);
+
+        assertEquals(jastiperRating, result.getJastiperRating());
+        assertEquals(productRating, result.getProductRating());
+        
+        verify(productService, times(1)).addProductRating(productId, productRating);
+        verify(authService, times(1)).addRating(expectedEmail, jastiperRating);
+    }
+
+    @Test
+    void giveRating_JastiperNotFound_ThrowsException() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setId(orderId);
+        order.setJastiperId(UUID.randomUUID());
+        order.setStatus("COMPLETED");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(authService.findAllUsers()).thenReturn(List.of());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            orderService.giveRating(orderId, 5, 5);
+        });
+
+        assertTrue(exception.getMessage().contains("Data Jastiper tidak ditemukan di sistem"));
+        verify(authService, never()).addRating(anyString(), anyInt());
+    }
 }

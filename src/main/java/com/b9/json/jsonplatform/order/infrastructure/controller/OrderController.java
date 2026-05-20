@@ -41,6 +41,31 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @PatchMapping("/{orderId}/purchased")
+    public ResponseEntity<Order> markPurchased(@PathVariable UUID orderId) {
+        Order order = orderService.updateStatusToPurchased(orderId);
+        return ResponseEntity.ok(order);
+    }
+
+    @PatchMapping("/{orderId}/shipped")
+    public ResponseEntity<Order> markShipped(@PathVariable UUID orderId,
+                                             @RequestParam String trackingNumber) {
+        Order order = orderService.updateStatusToShipped(orderId, trackingNumber);
+        return ResponseEntity.ok(order);
+    }
+
+    @PatchMapping("/{orderId}/completed")
+    public ResponseEntity<Order> markCompleted(@PathVariable UUID orderId) {
+        Order order = orderService.updateStatusToCompleted(orderId);
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/jastiper/{jastiperId}/stats")
+    public ResponseEntity<Long> getJastiperStats(@PathVariable UUID jastiperId) {
+        long total = orderService.getTotalSuccessfulOrdersByJastiper(jastiperId);
+        return ResponseEntity.ok(total);
+    }
+
     @PostMapping("/{orderId}/rate")
     public ResponseEntity<?> rateOrder(@PathVariable UUID orderId, 
                                        @RequestParam Integer jastiperRating, 
