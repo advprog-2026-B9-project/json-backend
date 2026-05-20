@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -215,6 +216,27 @@ class AuthServiceImplTest {
 
         assertNotNull(result);
         assertEquals("testuser", result.getUsername());
+    }
+
+    // ── findById ──────────────────────────────────────────────────────────────
+
+    @Test
+    void testFindById_ShouldReturnUser() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
+
+        User result = authService.findById(userId);
+
+        assertNotNull(result);
+        assertEquals(userId, result.getId());
+    }
+
+    @Test
+    void testFindById_NotFound_ShouldReturnNull() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        User result = authService.findById(userId);
+
+        assertNull(result);
     }
 
     // ── findAllUsers ──────────────────────────────────────────────────────────
