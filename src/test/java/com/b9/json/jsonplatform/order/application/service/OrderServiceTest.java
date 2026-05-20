@@ -6,6 +6,8 @@ import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +24,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 class OrderServiceTest {
@@ -34,7 +38,8 @@ class OrderServiceTest {
     private TransactionServiceImpl transactionService; 
     @Mock
     private ProductService productService;
-    
+    @Mock
+    private AuthService authService;
     @InjectMocks
     private OrderService orderService;
 
@@ -209,5 +214,118 @@ class OrderServiceTest {
 
         assertEquals("Pesanan belum dikirim, tidak bisa diselesaikan", exception.getMessage());
         verify(orderRepository, never()).save(any(Order.class)); 
+    }
+
+    @Test
+    void testCancelAndRefundOrder_Success() {
+        UUID orderId = UUID.randomUUID();
+        UUID titiperId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setId(orderId);
+        order.setStatus("PAID");
+        order.setTitiperId(titiperId);
+        order.setJastiperId(jastiperId);
+        order.setProductId(productId);
+        order.setQuantity(2);
+        order.setTotalPrice(new BigDecimal("200000"));
+
+        Wallet buyerWallet = mock(Wallet.class);
+        when(buyerWallet.getId()).thenReturn(UUID.randomUUID());
+
+        Wallet sellerWallet = mock(Wallet.class);
+        when(sellerWallet.getId()).thenReturn(UUID.randomUUID());
+
+        Transaction dummyRefundTx = mock(Transaction.class);
+        when(dummyRefundTx.getId()).thenReturn(UUID.randomUUID());
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(walletService.getWalletByUserId(titiperId)).thenReturn(buyerWallet);
+        when(walletService.getWalletByUserId(jastiperId)).thenReturn(sellerWallet);
+        
+        when(transactionService.createRefund(any(), any(), any())).thenReturn(dummyRefundTx);
+        
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Order canceledOrder = orderService.cancelAndRefundOrder(orderId);
+
+        assertEquals("CANCELLED", canceledOrder.getStatus());
+        verify(transactionService, times(1)).markSuccess(dummyRefundTx.getId());
+        
+        verify(productService, times(1)).increaseProductStock(productId, 2);
+        verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    void testCancelAndRefundOrder_Failed_BecauseAlreadyShipped() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setStatus("SHIPPED");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            orderService.cancelAndRefundOrder(orderId);
+        });
+
+        assertEquals("Pesanan tidak dapat dibatalkan pada status ini", exception.getMessage());
+        
+        verify(transactionService, never()).createRefund(any(), any(), any());
+        verify(productService, never()).increaseProductStock(any(), any());
+        verify(orderRepository, never()).save(any(Order.class)); 
+    }
+
+    @Test
+    void giveRating_Success() {
+        UUID orderId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setId(orderId);
+        order.setJastiperId(jastiperId);
+        order.setProductId(productId);
+        order.setStatus("COMPLETED");
+        
+        Integer jastiperRating = 5;
+        Integer productRating = 4;
+        String expectedEmail = "jastiper.bagoes@gmail.com";
+
+        User mockJastiper = new User();
+        mockJastiper.setId(jastiperId); 
+        mockJastiper.setEmail(expectedEmail);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(authService.findAllUsers()).thenReturn(List.of(mockJastiper));
+
+        Order result = orderService.giveRating(orderId, jastiperRating, productRating);
+
+        assertEquals(jastiperRating, result.getJastiperRating());
+        assertEquals(productRating, result.getProductRating());
+        
+        verify(productService, times(1)).addProductRating(productId, productRating);
+        verify(authService, times(1)).addRating(expectedEmail, jastiperRating);
+    }
+
+    @Test
+    void giveRating_JastiperNotFound_ThrowsException() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order();
+        order.setId(orderId);
+        order.setJastiperId(UUID.randomUUID());
+        order.setStatus("COMPLETED");
+        
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(authService.findAllUsers()).thenReturn(List.of());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            orderService.giveRating(orderId, 5, 5);
+        });
+
+        assertTrue(exception.getMessage().contains("Data Jastiper tidak ditemukan di sistem"));
+        verify(authService, never()).addRating(anyString(), anyInt());
     }
 }
