@@ -6,7 +6,6 @@ import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
 import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.domain.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -93,8 +92,23 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
+    public List<User> findAllUsers(String status) {
+        List<User> all = userRepository.findAll();
+        if (status == null) return all;
+        return switch (status.toLowerCase()) {
+            case "active"  -> all.stream()
+                    .filter(u -> !u.isBanned())
+                    .filter(u -> !KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
+                    .toList();
+            case "banned"  -> all.stream()
+                    .filter(User::isBanned)
+                    .toList();
+            case "pending" -> all.stream()
+                    .filter(u -> KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
+                    .toList();
+            default -> throw new IllegalArgumentException(
+                    "Status tidak valid: " + status + ". Gunakan: active, banned, pending");
+        };
     }
 
     @Override

@@ -129,8 +129,8 @@ public class OrderService {
         Wallet sellerWallet = walletService.getWalletByUserId(order.getJastiperId());
 
         Transaction refundTx = transactionService.createRefund(
-                sellerWallet.getId(),
                 buyerWallet.getId(),
+                sellerWallet.getId(),
                 order.getTotalPrice()
         );
         transactionService.markSuccess(refundTx.getId());
@@ -167,13 +167,13 @@ public class OrderService {
 
         productService.addProductRating(order.getProductId(), productRating);
 
-        String jastiperEmail = authService.findAllUsers().stream()
-                .filter(user -> user.getId().equals(order.getJastiperId()))
-                .map(User::getEmail)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Data Jastiper tidak ditemukan di sistem"));
+        User jastiper = authService.findById(order.getJastiperId());
+        if (jastiper == null) {
+            throw new IllegalArgumentException("Data Jastiper tidak ditemukan di sistem");
+        }
 
-        authService.addRating(jastiperEmail, jastiperRating);
+        authService.addRating(jastiper.getEmail(), jastiperRating);
+
         return orderRepository.save(order);
     }
 

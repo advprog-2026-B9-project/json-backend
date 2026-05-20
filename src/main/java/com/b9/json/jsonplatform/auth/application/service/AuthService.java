@@ -11,7 +11,7 @@ public interface AuthService {
     User findByEmail(String email);
     User findByUsername(String username);
     User findById(UUID id);
-    List<User> findAllUsers();
+    List<User> findAllUsers(String status);
     User demoteJastiper(String email);
     User banUser(String email);
     long countSuccessfulTransactions(String email);

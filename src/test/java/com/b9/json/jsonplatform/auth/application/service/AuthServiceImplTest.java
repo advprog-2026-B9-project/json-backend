@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -217,14 +218,119 @@ class AuthServiceImplTest {
         assertEquals("testuser", result.getUsername());
     }
 
-    @Test
-    void testFindAllUsers_ShouldReturnList() {
-        when(userRepository.findAll()).thenReturn(List.of(sampleUser));
+    // ── findById ──────────────────────────────────────────────────────────────
 
-        List<User> result = authService.findAllUsers();
+    @Test
+    void testFindById_ShouldReturnUser() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
+
+        User result = authService.findById(userId);
+
+        assertNotNull(result);
+        assertEquals(userId, result.getId());
+    }
+
+    @Test
+    void testFindById_NotFound_ShouldReturnNull() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        User result = authService.findById(userId);
+
+        assertNull(result);
+    }
+
+    // ── findAllUsers ──────────────────────────────────────────────────────────
+
+    @Test
+    void testFindAllUsers_NoFilter_ShouldReturnAll() {
+        User user1 = new User();
+        User user2 = new User();
+        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+
+        List<User> result = authService.findAllUsers(null);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void testFindAllUsers_FilterActive_ShouldReturnOnlyActiveUsers() {
+        User activeUser = new User();
+        activeUser.setEmail("active@example.com");
+        activeUser.setBanned(false);
+        activeUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User bannedUser = new User();
+        bannedUser.setBanned(true);
+        bannedUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User pendingUser = new User();
+        pendingUser.setBanned(false);
+        pendingUser.setKycStatus(KycStatus.PENDING_VERIFICATION);
+
+        when(userRepository.findAll()).thenReturn(List.of(activeUser, bannedUser, pendingUser));
+
+        List<User> result = authService.findAllUsers("active");
 
         assertEquals(1, result.size());
-        verify(userRepository, times(1)).findAll();
+        assertEquals("active@example.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void testFindAllUsers_FilterBanned_ShouldReturnOnlyBannedUsers() {
+        User activeUser = new User();
+        activeUser.setBanned(false);
+        activeUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User bannedUser = new User();
+        bannedUser.setEmail("banned@example.com");
+        bannedUser.setBanned(true);
+        bannedUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        when(userRepository.findAll()).thenReturn(List.of(activeUser, bannedUser));
+
+        List<User> result = authService.findAllUsers("banned");
+
+        assertEquals(1, result.size());
+        assertEquals("banned@example.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void testFindAllUsers_FilterPending_ShouldReturnOnlyPendingUsers() {
+        User activeUser = new User();
+        activeUser.setBanned(false);
+        activeUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User pendingUser = new User();
+        pendingUser.setEmail("pending@example.com");
+        pendingUser.setBanned(false);
+        pendingUser.setKycStatus(KycStatus.PENDING_VERIFICATION);
+
+        when(userRepository.findAll()).thenReturn(List.of(activeUser, pendingUser));
+
+        List<User> result = authService.findAllUsers("pending");
+
+        assertEquals(1, result.size());
+        assertEquals("pending@example.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void testFindAllUsers_FilterCaseInsensitive_ShouldWork() {
+        User bannedUser = new User();
+        bannedUser.setBanned(true);
+        bannedUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        when(userRepository.findAll()).thenReturn(List.of(bannedUser));
+
+        assertDoesNotThrow(() -> authService.findAllUsers("BANNED"));
+        assertDoesNotThrow(() -> authService.findAllUsers("Banned"));
+    }
+
+    @Test
+    void testFindAllUsers_InvalidStatus_ShouldThrowException() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.findAllUsers("unknown"));
     }
 
     // ── demoteJastiper ────────────────────────────────────────────────────────
@@ -333,5 +439,60 @@ class AuthServiceImplTest {
         long count = authService.countSuccessfulTransactions("test@example.com");
 
         assertEquals(2, count); // hanya tx1 dan tx2 yang SUCCESS PAYMENT
+    }
+
+    // ── addRating ─────────────────────────────────────────────────────────────
+
+    @Test
+    void testAddRating_ValidScore_ShouldUpdateRating() {
+        sampleUser.setRating(4.0);
+        sampleUser.setTotalReviews(1);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = authService.addRating("test@example.com", 5);
+
+        assertNotNull(result);
+        assertEquals(2, result.getTotalReviews());
+        assertEquals(4.5, result.getRating());
+    }
+
+    @Test
+    void testAddRating_FirstRating_ShouldSetRatingCorrectly() {
+        sampleUser.setRating(0.0);
+        sampleUser.setTotalReviews(0);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = authService.addRating("test@example.com", 4);
+
+        assertEquals(1, result.getTotalReviews());
+        assertEquals(4.0, result.getRating());
+    }
+
+    @Test
+    void testAddRating_UserNotFound_ShouldThrowException() {
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.addRating("ghost@example.com", 5));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddRating_ScoreTooLow_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.addRating("test@example.com", 0));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddRating_ScoreTooHigh_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.addRating("test@example.com", 6));
+
+        verify(userRepository, never()).save(any());
     }
 }
