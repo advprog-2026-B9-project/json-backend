@@ -1,16 +1,15 @@
 package com.b9.json.jsonplatform.order.application.service;
 
+import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.order.domain.Order;
 import com.b9.json.jsonplatform.order.infrastructure.repository.OrderRepository;
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 import com.b9.json.jsonplatform.wallet.application.WalletService;
-import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
 import com.b9.json.jsonplatform.wallet.application.TransactionService;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
-import com.b9.json.jsonplatform.auth.domain.User;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +24,12 @@ public class OrderService {
     private final TransactionService transactionService;
     private final ProductService productService;
     private final AuthService authService;
-
+    
     public OrderService(OrderRepository orderRepository,
                         WalletService walletService,
-                        TransactionServiceImpl transactionService,
+                        TransactionService transactionService,
                         ProductService productService,
-                        AuthService authService) {
+                        AuthService authService) { 
         this.orderRepository = orderRepository;
         this.walletService = walletService;
         this.transactionService = transactionService;
@@ -129,8 +128,8 @@ public class OrderService {
         Wallet sellerWallet = walletService.getWalletByUserId(order.getJastiperId());
 
         Transaction refundTx = transactionService.createRefund(
-                buyerWallet.getId(),
-                sellerWallet.getId(),
+                sellerWallet.getId(), 
+                buyerWallet.getId(), 
                 order.getTotalPrice()
         );
         transactionService.markSuccess(refundTx.getId());
