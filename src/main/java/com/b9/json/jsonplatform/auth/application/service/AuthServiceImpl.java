@@ -6,7 +6,6 @@ import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
 import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.domain.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
