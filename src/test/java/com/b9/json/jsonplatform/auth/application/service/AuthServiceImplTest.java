@@ -217,14 +217,98 @@ class AuthServiceImplTest {
         assertEquals("testuser", result.getUsername());
     }
 
-    @Test
-    void testFindAllUsers_ShouldReturnList() {
-        when(userRepository.findAll()).thenReturn(List.of(sampleUser));
+    // ── findAllUsers ──────────────────────────────────────────────────────────
 
-        List<User> result = authService.findAllUsers();
+    @Test
+    void testFindAllUsers_NoFilter_ShouldReturnAll() {
+        User user1 = new User();
+        User user2 = new User();
+        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+
+        List<User> result = authService.findAllUsers(null);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void testFindAllUsers_FilterActive_ShouldReturnOnlyActiveUsers() {
+        User activeUser = new User();
+        activeUser.setEmail("active@example.com");
+        activeUser.setBanned(false);
+        activeUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User bannedUser = new User();
+        bannedUser.setBanned(true);
+        bannedUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User pendingUser = new User();
+        pendingUser.setBanned(false);
+        pendingUser.setKycStatus(KycStatus.PENDING_VERIFICATION);
+
+        when(userRepository.findAll()).thenReturn(List.of(activeUser, bannedUser, pendingUser));
+
+        List<User> result = authService.findAllUsers("active");
 
         assertEquals(1, result.size());
-        verify(userRepository, times(1)).findAll();
+        assertEquals("active@example.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void testFindAllUsers_FilterBanned_ShouldReturnOnlyBannedUsers() {
+        User activeUser = new User();
+        activeUser.setBanned(false);
+        activeUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User bannedUser = new User();
+        bannedUser.setEmail("banned@example.com");
+        bannedUser.setBanned(true);
+        bannedUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        when(userRepository.findAll()).thenReturn(List.of(activeUser, bannedUser));
+
+        List<User> result = authService.findAllUsers("banned");
+
+        assertEquals(1, result.size());
+        assertEquals("banned@example.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void testFindAllUsers_FilterPending_ShouldReturnOnlyPendingUsers() {
+        User activeUser = new User();
+        activeUser.setBanned(false);
+        activeUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        User pendingUser = new User();
+        pendingUser.setEmail("pending@example.com");
+        pendingUser.setBanned(false);
+        pendingUser.setKycStatus(KycStatus.PENDING_VERIFICATION);
+
+        when(userRepository.findAll()).thenReturn(List.of(activeUser, pendingUser));
+
+        List<User> result = authService.findAllUsers("pending");
+
+        assertEquals(1, result.size());
+        assertEquals("pending@example.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void testFindAllUsers_FilterCaseInsensitive_ShouldWork() {
+        User bannedUser = new User();
+        bannedUser.setBanned(true);
+        bannedUser.setKycStatus(KycStatus.UNVERIFIED);
+
+        when(userRepository.findAll()).thenReturn(List.of(bannedUser));
+
+        assertDoesNotThrow(() -> authService.findAllUsers("BANNED"));
+        assertDoesNotThrow(() -> authService.findAllUsers("Banned"));
+    }
+
+    @Test
+    void testFindAllUsers_InvalidStatus_ShouldThrowException() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.findAllUsers("unknown"));
     }
 
     // ── demoteJastiper ────────────────────────────────────────────────────────
