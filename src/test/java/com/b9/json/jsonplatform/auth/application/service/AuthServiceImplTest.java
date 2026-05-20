@@ -418,4 +418,59 @@ class AuthServiceImplTest {
 
         assertEquals(2, count); // hanya tx1 dan tx2 yang SUCCESS PAYMENT
     }
+
+    // ── addRating ─────────────────────────────────────────────────────────────
+
+    @Test
+    void testAddRating_ValidScore_ShouldUpdateRating() {
+        sampleUser.setRating(4.0);
+        sampleUser.setTotalReviews(1);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = authService.addRating("test@example.com", 5);
+
+        assertNotNull(result);
+        assertEquals(2, result.getTotalReviews());
+        assertEquals(4.5, result.getRating());
+    }
+
+    @Test
+    void testAddRating_FirstRating_ShouldSetRatingCorrectly() {
+        sampleUser.setRating(0.0);
+        sampleUser.setTotalReviews(0);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = authService.addRating("test@example.com", 4);
+
+        assertEquals(1, result.getTotalReviews());
+        assertEquals(4.0, result.getRating());
+    }
+
+    @Test
+    void testAddRating_UserNotFound_ShouldThrowException() {
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.addRating("ghost@example.com", 5));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddRating_ScoreTooLow_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.addRating("test@example.com", 0));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddRating_ScoreTooHigh_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.addRating("test@example.com", 6));
+
+        verify(userRepository, never()).save(any());
+    }
 }
