@@ -49,10 +49,15 @@
             }
             return ResponseEntity.badRequest().body("User tidak ditemukan!");
         }
-    
+
         @GetMapping("/list")
-        public ResponseEntity<List<User>> listUsers() {
-            return ResponseEntity.ok(authService.findAllUsers());
+        public ResponseEntity<?> listUsers(@RequestParam(required = false) String status) {
+            try {
+                return ResponseEntity.ok(authService.findAllUsers(status));
+            }
+            catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
         }
     
         @GetMapping("/user")
