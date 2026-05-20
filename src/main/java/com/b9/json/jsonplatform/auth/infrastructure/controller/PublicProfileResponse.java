@@ -7,8 +7,11 @@ import lombok.Setter;
 public class PublicProfileResponse {
     private String username;
     private String fullName;
+    private String email;
     private String role;
     private String kycStatus;
     private boolean isBanned;
+    private double rating;
+    private int totalReviews;
     private long totalSuccessfulTransactions;
 }

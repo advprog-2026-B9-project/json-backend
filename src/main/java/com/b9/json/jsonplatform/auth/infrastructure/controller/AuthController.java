@@ -57,7 +57,7 @@
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
         }
-    
+
         @GetMapping("/user")
         public ResponseEntity<?> getUserByEmail(@RequestParam String email) {
             User user = authService.findByEmail(email);
@@ -65,10 +65,13 @@
                 PublicProfileResponse response = new PublicProfileResponse();
                 response.setUsername(user.getUsername());
                 response.setFullName(user.getFullName());
+                response.setEmail(user.getEmail());
                 response.setRole(user.getRole().name());
                 response.setKycStatus(user.getKycStatus().name());
                 response.setBanned(user.isBanned());
-    
+                response.setRating(user.getRating());
+                response.setTotalReviews(user.getTotalReviews());
+
                 if (UserRole.JASTIPER.equals(user.getRole())) {
                     response.setTotalSuccessfulTransactions(
                             authService.countSuccessfulTransactions(email)
