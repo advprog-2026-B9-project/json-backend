@@ -12,6 +12,5 @@ public interface ProductRepository {
     List<Product> findByOwner(String ownerUsername);
     void deleteById(UUID id);
     List<Product> searchProducts(String name, String jastiper);
-    boolean deductStock(UUID id, Integer quantity);
     Optional<Product> findByIdForUpdate(UUID id);
 }

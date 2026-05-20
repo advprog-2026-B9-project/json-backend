@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.inventory.infrastructure.controller;
 
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -95,6 +96,30 @@ public class ProductController {
             @RequestParam Integer quantity) {
 
         productService.increaseProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping("/admin/{id}")
+    public ResponseEntity<Product> adminUpdateProduct(
+            @PathVariable UUID id,
+            @Validated @RequestBody Product updatedData) {
+
+        Product product = productService.adminUpdateProduct(id, updatedData);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<Void> adminDeleteProduct(@PathVariable UUID id) {
+        productService.adminDeleteProduct(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("/{id}/rating")
+    public ResponseEntity<Void> addProductRating(
+            @PathVariable UUID id,
+            @RequestParam Integer ratingScore) {
+
+        productService.addProductRating(id, ratingScore);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

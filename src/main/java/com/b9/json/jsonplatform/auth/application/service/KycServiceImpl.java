@@ -4,7 +4,6 @@ import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,8 +11,11 @@ import java.util.List;
 @Service
 public class KycServiceImpl implements KycService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    public KycServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl) {
