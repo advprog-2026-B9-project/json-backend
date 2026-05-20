@@ -8,6 +8,8 @@ import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -34,7 +36,9 @@ class OrderServiceTest {
     private TransactionServiceImpl transactionService; 
     @Mock
     private ProductService productService;
-    
+    @Mock
+    private AuthService authService;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -183,16 +187,66 @@ class OrderServiceTest {
     @Test
     void testUpdateStatusToCompleted_Success() {
         UUID orderId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+
         Order order = new Order();
         order.setStatus("SHIPPED");
-        
+        order.setJastiperId(jastiperId);
+
+        User jastiper = new User();
+        jastiper.setEmail("jastiper@example.com");
+
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(authService.findById(jastiperId)).thenReturn(jastiper);
 
-        Order updatedOrder = orderService.updateStatusToCompleted(orderId);
+        Order updatedOrder = orderService.updateStatusToCompleted(orderId, 5);
 
         assertEquals("COMPLETED", updatedOrder.getStatus());
+        assertEquals(5, updatedOrder.getRatingScore());
+        verify(authService, times(1)).addRating("jastiper@example.com", 5);
         verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    void testUpdateStatusToCompleted_NullRating_ShouldNotCallAddRating() {
+        UUID orderId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setStatus("SHIPPED");
+        order.setJastiperId(jastiperId);
+
+        User jastiper = new User();
+        jastiper.setEmail("jastiper@example.com");
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(authService.findById(jastiperId)).thenReturn(jastiper);
+
+        Order updatedOrder = orderService.updateStatusToCompleted(orderId, null);
+
+        assertEquals("COMPLETED", updatedOrder.getStatus());
+        verify(authService, never()).addRating(any(), anyInt());
+    }
+
+    @Test
+    void testUpdateStatusToCompleted_JastiperNotFound_ShouldNotCallAddRating() {
+        UUID orderId = UUID.randomUUID();
+        UUID jastiperId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setStatus("SHIPPED");
+        order.setJastiperId(jastiperId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(authService.findById(jastiperId)).thenReturn(null);
+
+        Order updatedOrder = orderService.updateStatusToCompleted(orderId, 4);
+
+        assertEquals("COMPLETED", updatedOrder.getStatus());
+        verify(authService, never()).addRating(any(), anyInt());
     }
 
     @Test
@@ -204,7 +258,7 @@ class OrderServiceTest {
         when(orderRepository.findById(dummyOrderId)).thenReturn(Optional.of(order));
 
         Exception exception = assertThrows(IllegalStateException.class, () -> {
-            orderService.updateStatusToCompleted(dummyOrderId);
+            orderService.updateStatusToCompleted(dummyOrderId, null);
         });
 
         assertEquals("Pesanan belum dikirim, tidak bisa diselesaikan", exception.getMessage());

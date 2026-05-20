@@ -8,6 +8,8 @@ import com.b9.json.jsonplatform.wallet.application.WalletService;
 import com.b9.json.jsonplatform.wallet.application.TransactionServiceImpl;
 import com.b9.json.jsonplatform.wallet.domain.Transaction;
 import com.b9.json.jsonplatform.wallet.domain.Wallet;
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,16 +21,19 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final WalletService walletService;
     private final TransactionServiceImpl transactionService;
-    private final ProductService productService; 
+    private final ProductService productService;
+    private final AuthService authService;
 
     public OrderService(OrderRepository orderRepository,
                         WalletService walletService,
                         TransactionServiceImpl transactionService,
-                        ProductService productService) { 
+                        ProductService productService,
+                        AuthService authService) {
         this.orderRepository = orderRepository;
         this.walletService = walletService;
         this.transactionService = transactionService;
         this.productService = productService;
+        this.authService = authService;
     }
 
     @Transactional
@@ -92,7 +97,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order updateStatusToCompleted(UUID orderId) {
+    public Order updateStatusToCompleted(UUID orderId, Integer ratingScore) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order tidak ditemukan"));
         
@@ -101,6 +106,13 @@ public class OrderService {
         }
         
         order.setStatus("COMPLETED");
+        order.setRatingScore(ratingScore);
+
+        User jastiper = authService.findById(order.getJastiperId());
+        if (jastiper != null && ratingScore != null) {
+            authService.addRating(jastiper.getEmail(), ratingScore);
+        }
+
         return orderRepository.save(order);
     }
 }
