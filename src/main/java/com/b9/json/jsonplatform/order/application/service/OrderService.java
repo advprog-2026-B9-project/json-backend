@@ -47,6 +47,14 @@ public class OrderService {
             throw new IllegalArgumentException("Alamat pengiriman mengandung karakter tidak valid");
         }
         Product product = productService.getProductById(order.getProductId());
+        order.setProductName(product.getName());
+        User jastiper = authService.findByUsername(product.getOwnerUsername());
+
+        if (jastiper == null) {
+            throw new IllegalArgumentException("Data Jastiper tidak ditemukan di sistem!");
+        }
+
+        order.setJastiperId(jastiper.getId());
 
         User jastiper = authService.findByUsername(product.getOwnerUsername());
 
@@ -71,7 +79,6 @@ public class OrderService {
         transactionService.markSuccess(payment.getId());
 
         productService.deductProductStock(order.getProductId(), order.getQuantity());
-
         order.setStatus("PAID");
         return orderRepository.save(order);
     }
