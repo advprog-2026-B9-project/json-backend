@@ -14,6 +14,9 @@ class JsonPlatformApplicationTests {
 
     @Test
     void testMain() {
-        JsonPlatformApplication.main(new String[] {});
+        JsonPlatformApplication.main(new String[] {
+                "--spring.profiles.active=test",
+                "--spring.main.web-application-type=none"
+        });
     }
 }

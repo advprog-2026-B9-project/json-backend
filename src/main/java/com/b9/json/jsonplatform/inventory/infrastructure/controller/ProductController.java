@@ -1,0 +1,125 @@
+package com.b9.json.jsonplatform.inventory.infrastructure.controller;
+
+import com.b9.json.jsonplatform.inventory.application.service.ProductService;
+import com.b9.json.jsonplatform.inventory.domain.model.Product;
+import com.b9.json.jsonplatform.inventory.application.dto.ProductDetailResponse;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    @PostMapping
+    public ResponseEntity<Product> createProduct(
+            @Validated @RequestBody Product product,
+            @RequestHeader("X-User-Name") String ownerUsername) {
+
+        Product createdProduct = productService.createProduct(product, ownerUsername);
+        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<Product>> getMyProducts(
+            @RequestHeader("X-User-Name") String ownerUsername) {
+
+        List<Product> products = productService.getMyProducts(ownerUsername);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(
+            @PathVariable UUID id,
+            @Validated @RequestBody Product product,
+            @RequestHeader("X-User-Name") String ownerUsername) {
+
+        Product updatedProduct = productService.updateProduct(id, product, ownerUsername);
+        return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(
+            @PathVariable UUID id,
+            @RequestHeader("X-User-Name") String ownerUsername) {
+
+        productService.deleteProduct(id, ownerUsername);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProductDetailResponse>> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String jastiper) {
+
+        return ResponseEntity.ok(productService.getAllProductsWithDetails(name, jastiper));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable UUID id) {
+        Product product = productService.getProductById(id);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/deduct-stock")
+    public ResponseEntity<Void> deductProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.deductProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/increase-stock")
+    public ResponseEntity<Void> increaseProductStock(
+            @PathVariable UUID id,
+            @RequestParam Integer quantity) {
+
+        productService.increaseProductStock(id, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping("/admin/{id}")
+    public ResponseEntity<Product> adminUpdateProduct(
+            @PathVariable UUID id,
+            @Validated @RequestBody Product updatedData) {
+
+        Product product = productService.adminUpdateProduct(id, updatedData);
+        return new ResponseEntity<>(product, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<Void> adminDeleteProduct(@PathVariable UUID id) {
+        productService.adminDeleteProduct(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("/{id}/rating")
+    public ResponseEntity<Void> addProductRating(
+            @PathVariable UUID id,
+            @RequestParam Integer ratingScore) {
+
+        productService.addProductRating(id, ratingScore);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+}
