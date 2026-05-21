@@ -16,8 +16,9 @@ public class Order {
     private UUID id;
     private UUID titiperId;
     private UUID jastiperId;
-
+    private String jastiperUsername;
     private UUID productId;
+    private String productName;
     private Integer quantity;
     private BigDecimal totalPrice;
     private String shippingAddress;

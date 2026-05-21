@@ -47,8 +47,15 @@ public class OrderService {
         if (order.getShippingAddress() != null && order.getShippingAddress().matches(".*[<>{}\\$].*")) {
             throw new IllegalArgumentException("Alamat pengiriman mengandung karakter tidak valid");
         }
-
         Product product = productService.getProductById(order.getProductId());
+        order.setProductName(product.getName());
+        User jastiper = authService.findByUsername(product.getOwnerUsername());
+
+        if (jastiper == null) {
+            throw new IllegalArgumentException("Data Jastiper tidak ditemukan di sistem!");
+        }
+
+        order.setJastiperId(jastiper.getId());
 
         Wallet buyerWallet = walletService.getWalletByUserId(order.getTitiperId());
         Wallet sellerWallet = walletService.getWalletByUserId(order.getJastiperId());
@@ -65,7 +72,6 @@ public class OrderService {
         transactionService.markSuccess(payment.getId());
 
         productService.deductProductStock(order.getProductId(), order.getQuantity());
-
         order.setStatus("PAID");
         return orderRepository.save(order);
     }
