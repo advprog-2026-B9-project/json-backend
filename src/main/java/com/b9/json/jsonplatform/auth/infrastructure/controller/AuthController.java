@@ -1,5 +1,6 @@
     package com.b9.json.jsonplatform.auth.infrastructure.controller;
     
+    import com.b9.json.jsonplatform.auth.application.dto.UserInternalResponse;
     import com.b9.json.jsonplatform.auth.application.service.AuthService;
     import com.b9.json.jsonplatform.auth.application.service.KycService;
     import com.b9.json.jsonplatform.auth.domain.User;
@@ -177,5 +178,18 @@
             catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
+        }
+
+        @GetMapping("/internal/user")
+        public ResponseEntity<?> getUserByUsername(@RequestParam String username) {
+            User user = authService.findByUsername(username);
+            if (user != null) {
+                return ResponseEntity.ok(new UserInternalResponse(
+                        user.getUsername(),
+                        user.getFullName(),
+                        user.getPhoneNumber()
+                ));
+            }
+            return ResponseEntity.notFound().build();
         }
     }
