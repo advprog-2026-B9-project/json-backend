@@ -18,16 +18,46 @@ class OrderRepositoryTest {
 
     @Test
     void testFindByTitiperId() {
-        UUID dummyTitiperId = UUID.randomUUID(); // Buat UUID dummy
+        UUID titiperId = UUID.randomUUID();
 
         Order order = new Order();
-        order.setTitiperId(dummyTitiperId); // Gunakan UUID
+        order.setTitiperId(titiperId);
         order.setQuantity(2);
         orderRepository.save(order);
 
-        List<Order> found = orderRepository.findByTitiperId(dummyTitiperId); // Gunakan UUID untuk pencarian
+        List<Order> result = orderRepository.findByTitiperId(titiperId);
 
-        assertFalse(found.isEmpty());
-        assertEquals(dummyTitiperId, found.get(0).getTitiperId()); // Pastikan hasil pengecekan menggunakan UUID
+        assertFalse(result.isEmpty());
+        assertEquals(titiperId, result.get(0).getTitiperId());
+    }
+
+    @Test
+    void testFindByJastiperId() {
+        UUID jastiperId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setJastiperId(jastiperId);
+        order.setQuantity(1);
+        orderRepository.save(order);
+
+        List<Order> result = orderRepository.findByJastiperId(jastiperId);
+
+        assertFalse(result.isEmpty());
+        assertEquals(jastiperId, result.get(0).getJastiperId());
+    }
+
+    @Test
+    void testCountByJastiperIdAndStatus() {
+        UUID jastiperId = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setJastiperId(jastiperId);
+        order.setStatus("COMPLETED");
+        order.setQuantity(1);
+        orderRepository.save(order);
+
+        long count = orderRepository.countByJastiperIdAndStatus(jastiperId, "COMPLETED");
+
+        assertEquals(1, count);
     }
 }
