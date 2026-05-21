@@ -1,86 +1,75 @@
 package com.b9.json.jsonplatform.order.infrastructure.controller;
 
-import com.b9.json.jsonplatform.order.domain.Order;
+import com.b9.json.jsonplatform.order.application.handler.OrderStatusContext;
 import com.b9.json.jsonplatform.order.application.service.OrderService;
+import com.b9.json.jsonplatform.order.domain.Order;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
-
     @PostMapping("/checkout")
-    public Order checkout(@RequestBody Order order) {
-        return orderService.createOrder(order);
+    public ResponseEntity<Order> checkout(@RequestBody Order order) {
+        return ResponseEntity.ok(orderService.createOrder(order));
     }
 
     @GetMapping("/history/{titiperId}")
-    public List<Order> history(@PathVariable UUID titiperId) {
-        return orderService.getTitiperHistory(titiperId);
-    }
-
-    @PatchMapping("/{orderId}/cancel")
-    public ResponseEntity<Order> cancelOrder(@PathVariable UUID orderId) {
-        Order canceledOrder = orderService.cancelAndRefundOrder(orderId);
-        return ResponseEntity.ok(canceledOrder);
+    public ResponseEntity<List<Order>> history(@PathVariable UUID titiperId) {
+        return ResponseEntity.ok(orderService.getTitiperHistory(titiperId));
     }
 
     @GetMapping("/jastiper/{jastiperId}")
     public ResponseEntity<List<Order>> getJastiperOrders(@PathVariable UUID jastiperId) {
-        List<Order> orders = orderService.getOrdersByJastiper(jastiperId);
-        return ResponseEntity.ok(orders);
+        return ResponseEntity.ok(orderService.getOrdersByJastiper(jastiperId));
+    }
+
+    @GetMapping("/jastiper/{jastiperId}/stats")
+    public ResponseEntity<Long> getJastiperStats(@PathVariable UUID jastiperId) {
+        return ResponseEntity.ok(orderService.getTotalSuccessfulOrdersByJastiper(jastiperId));
+    }
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<Order>> getAllOrdersAdmin() {
+        return ResponseEntity.ok(orderService.getAllOrdersForAdmin());
     }
 
     @PatchMapping("/{orderId}/purchased")
     public ResponseEntity<Order> markPurchased(@PathVariable UUID orderId) {
-        Order order = orderService.updateStatusToPurchased(orderId);
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(orderService.updateStatus(orderId, "PURCHASED", OrderStatusContext.builder().build()));
     }
 
     @PatchMapping("/{orderId}/shipped")
     public ResponseEntity<Order> markShipped(@PathVariable UUID orderId,
                                              @RequestParam String trackingNumber) {
-        Order order = orderService.updateStatusToShipped(orderId, trackingNumber);
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(orderService.updateStatus(orderId, "SHIPPED",
+                OrderStatusContext.builder().trackingNumber(trackingNumber).build()));
     }
 
     @PatchMapping("/{orderId}/completed")
     public ResponseEntity<Order> markCompleted(@PathVariable UUID orderId) {
-        Order order = orderService.updateStatusToCompleted(orderId);
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(orderService.updateStatus(orderId, "COMPLETED", OrderStatusContext.builder().build()));
     }
 
-    @GetMapping("/jastiper/{jastiperId}/stats")
-    public ResponseEntity<Long> getJastiperStats(@PathVariable UUID jastiperId) {
-        long total = orderService.getTotalSuccessfulOrdersByJastiper(jastiperId);
-        return ResponseEntity.ok(total);
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<Order> cancelOrder(@PathVariable UUID orderId) {
+        return ResponseEntity.ok(orderService.cancelAndRefundOrder(orderId));
     }
 
     @PostMapping("/{orderId}/rate")
-    public ResponseEntity<?> rateOrder(@PathVariable UUID orderId, 
-                                       @RequestParam Integer jastiperRating, 
-                                       @RequestParam Integer productRating) {
-        try {
-            Order updatedOrder = orderService.giveRating(orderId, jastiperRating, productRating);
-            return ResponseEntity.ok(updatedOrder);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/admin/all")
-    public ResponseEntity<List<Order>> getAllOrdersAdmin() {
-        List<Order> orders = orderService.getAllOrdersForAdmin();
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<Order> rateOrder(@PathVariable UUID orderId,
+                                           @RequestParam Integer jastiperRating,
+                                           @RequestParam Integer productRating) {
+        return ResponseEntity.ok(orderService.giveRating(orderId, jastiperRating, productRating));
     }
 }
