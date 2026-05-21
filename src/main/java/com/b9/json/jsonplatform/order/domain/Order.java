@@ -44,7 +44,4 @@ public class Order {
             this.status = "PENDING";
         }
     }
-
-    @Column
-    private Integer ratingScore;
 }
